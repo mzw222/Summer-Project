@@ -87,7 +87,7 @@ def import_ctrip_comments(xlsx_path: str):
 
 if __name__ == "__main__":
     base = os.path.abspath(os.path.join(current_dir, "..", "data"))
-    import_attractions(os.path.join(base, "beijing.csv"))
+    import_attractions(os.path.join(base, "北京.csv"))
     import_xhs_posts(os.path.join(base, "xiaohongshu_posts.xlsx"))
     import_ctrip_comments(os.path.join(base, "ctrip_comments.xlsx"))
     print("✅ 数据导入完成。")
