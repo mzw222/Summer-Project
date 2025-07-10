@@ -1,11 +1,10 @@
-# backend_local/app/services.py
-
+# project_v3/app/services.py
 from typing import List
 import json
 
 from .crud_db import list_attractions_db, get_attraction_db
 from .crud import get_posts_for
-from .ai_services import summarize_pros_cons, generate_itinerary
+from .ai_services import generate_llm_itinerary
 from .models import RecommendRequest, ItineraryRequest, Attraction
 from .db import SessionLocal
 
@@ -21,11 +20,11 @@ def recommend(req: RecommendRequest) -> List[Attraction]:
         return cands
     finally:
         db.close()
-
+"""
 def detail(attraction_id: str) -> Attraction:
-    """
+  
     读取单个景点基础信息并调用 AI 对爬取的评论做优缺点总结。
-    """
+   
     db = SessionLocal()
     try:
         base = get_attraction_db(db, attraction_id)
@@ -39,7 +38,7 @@ def detail(attraction_id: str) -> Attraction:
     posts = get_posts_for(attraction_id)
     # 由 AI 服务补全 pros/cons、source_posts
     return summarize_pros_cons(base, posts)
-
+ """
 def build_itinerary(req: ItineraryRequest) -> List[dict]:
     """
     根据用户选中的景点与偏好，调用 AI 生成结构化行程方案。
@@ -56,12 +55,19 @@ def build_itinerary(req: ItineraryRequest) -> List[dict]:
     if not selected:
         return []
 
+ # 构建LLMIteraryRequest对象
+    llm_req = LLMIteraryRequest(
+        目的地="北京",  # 根据实际情况设置目的地
+        天数=req.days,
+        必去的景点=[attraction.name for attraction in selected],
+        必不去的景点=[],  # 根据实际情况设置
+        preferences=req.preferences,
+        selected=selected
+    )
+
     # 调用 AI 生成行程
-    itinerary = generate_itinerary(selected, req.days, req.preferences)
-    # 确保返回值为 List[dict]
-    if isinstance(itinerary, str):
-        try:
-            itinerary = json.loads(itinerary)
-        except json.JSONDecodeError:
-            itinerary = []
-    return itinerary
+    llm_itinerary = generate_llm_itinerary(req)
+    if llm_itinerary:
+        # 将 LLMIteraryResponse 对象转换为 List[dict]
+        return [day.dict() for day in llm_itinerary.itinerary]
+    return []

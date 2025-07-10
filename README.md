@@ -1,6 +1,6 @@
 # Summer-Project
-
 ## 快速启动
+
 1. 打开 Codespaces（或本地）
 2. 安装依赖：
    ```bash
@@ -26,6 +26,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | GET  | `/attractions`                             | `?destination=北京&days=2&preferences=文化&preferences=美食`<br>（Query）                   | 搜索/推荐景点列表        | `List<Attraction>`                 |                  |
 | GET  | `/attractions/{id}`                        | `id`（Path）                                                                          | 单个景点详情，含优缺点与来源链接 | `Attraction`                       |                  |
 | POST | `/itinerary`                               | `{ selected_ids: ["id1","id2"], days:2, preferences:["文化","美食"] }`<br>（JSON Body）   | 基于选中景点生成行程草稿     | `List<{ day, attraction, notes }>` |                  |
+| POST |`/llm-itinerary` | `{ "destination": "北京", "days": 4, "preferences": ["文化", "历史", "步行友好"], "must_visit": ["故宫"], "must_not_visit": ["长城", "王府井"] }`<br>（JSON Body） | 调用大模型API生成行程草稿 | `List<{ day, work flow: [{ name, transport, time_spent }] }>` |  |
 | POST | `/users`                                   | `?username=xxx&nickname=yyy`<br>（Query） 或 Body（可根据前端实际改）                            | 用户注册             | `User`                             |                  |
 | GET  | `/users/{user_id}`                         | `user_id`（Path）                                                                     | 获取用户资料           | `User`                             |                  |
 | POST | `/posts`                                   | `{ user_id:"uid", content:"文字", images:["url1","url2"] }`<br>（JSON Body）            | 创建一条用户帖子         | `Post`                             |                  |
@@ -51,8 +52,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 * 搜索页/推荐页：`GET /attractions`
 * 详情页：`GET /attractions/{id}`
 * 滑卡推荐：`POST /itinerary`
+* 大模型API推荐：`POST /llm-itinerary`
 * 用户社交：`/users`、`/posts`、`/comments`、`/like`、`/follow`
-* 我的行程：`/users/{user_id}/itineraries`
+* 我的行程：`/users/{user_id}/itineraries`、`/users/{user_id}/llm-itineraries`
 
 确保在小程序或网页端，按上表填写正确的 Path、Query 或 JSON Body，就能获得相应的 JSON 数据并渲染 UI。
-
