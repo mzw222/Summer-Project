@@ -22,5 +22,5 @@ def search_attractions():
     conn.close()
     return jsonify(attraction_names)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+#if __name__ == '__main__':
+#    app.run(debug=True)
