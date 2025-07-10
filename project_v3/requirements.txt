@@ -3,7 +3,8 @@ uvicorn
 pandas
 openpyxl
 pydantic
-
+appbuilder
+appbuilder-sdk
 sqlalchemy
 psycopg2-binary    # 如果使用 PostgreSQL，SQLite 可不用
 alembic             # 数据库迁移

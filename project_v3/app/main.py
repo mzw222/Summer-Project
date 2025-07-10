@@ -1,10 +1,9 @@
-# backend_local/app/main.py
-
 from fastapi import FastAPI, Query, Body, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 from typing import List, Optional
 from sqlalchemy.orm import Session
+import uuid,datetime,json,logging
 
 # 导入数据库引擎与依赖
 from .db import get_db, Base, engine
@@ -20,11 +19,13 @@ from .models import (
     ItineraryRecord,
     ItineraryItem,
     ItineraryDetail,
+    LLMIteraryRequest,
+    LLMIteraryResponse,
 )
 
 # 业务逻辑
-from .services import recommend, detail, build_itinerary
-
+from .services import recommend, build_itinerary #detail
+from .ai_services import generate_llm_itinerary
 # ORM CRUD
 from .crud_db import (
     create_user_db,
@@ -86,12 +87,25 @@ def api_detail(id: str):
     response_model=List[dict],
     summary="生成行程草稿"
 )
-def api_itinerary(req: ItineraryRequest):
-    return build_itinerary(req)
+def api_itinerary(
+    req: ItineraryRequest,
+    must_visit: List[str] = Body(...),
+    must_not_visit: List[str] = Body(...),
+    destination: str = Body(...)
+):
+    return build_itinerary(req, must_visit, must_not_visit, destination)
 
 @app.get("/", include_in_schema=False)
 def health_check():
     return {"status": "ok", "message": "Travel API is running"}
+
+@app.post(
+    "/llm-itineraries",
+    response_model=LLMIteraryResponse,
+    summary="使用大模型生成行程推荐"
+)
+def api_llm_itineraries(req: LLMIteraryRequest):
+    return generate_llm_itinerary(req)
 
 # ---- 用户注册 & 查询 ----
 @app.post(
@@ -213,10 +227,16 @@ def api_save_itinerary(
     selected_ids: List[str] = Body(..., description="已选景点 ID 列表"),
     days: int = Body(..., gt=0, description="行程天数"),
     preferences: List[str] = Body(..., description="行程偏好标签"),
+    must_visit: List[str] = Body(...),
+    must_not_visit: List[str] = Body(...),
+    destination: str = Body(...),
     db: Session = Depends(get_db)
 ):
     itinerary = build_itinerary(
-        ItineraryRequest(selected_ids=selected_ids, days=days, preferences=preferences)
+        ItineraryRequest(selected_ids=selected_ids, days=days, preferences=preferences),
+        must_visit,
+        must_not_visit,
+        destination
     )
     return save_itinerary_db(
         db, user_id, title, selected_ids, days, preferences, itinerary
@@ -283,3 +303,21 @@ def api_delete_item(
 ):
     return delete_itinerary_item(db, item_id)
 
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# 在路由处理函数中使用日志
+@app.post(
+    "/itinerary",
+    response_model=List[dict],
+    summary="生成行程草稿"
+)
+def api_itinerary(req: ItineraryRequest):
+    try:
+        logging.info("Received itinerary request: %s", req)
+        result = build_itinerary(req)
+        logging.info("Itinerary generated successfully: %s", result)
+        return result
+    except Exception as e:
+        logging.error("Error generating itinerary: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error")
