@@ -76,11 +76,11 @@ def get_attraction_db(db: Session, attraction_id: str) -> Attraction | None:
 # 用户 CRUD
 # --------------------
 
-def create_user_db(db: Session, username: str, nickname: str) -> User:
+def create_user_db(db: Session, username: str, password: str) -> User:
     new_user = UserORM(
         id=str(uuid.uuid4()),
         username=username,
-        nickname=nickname,
+        password=password,
         avatar=None,
         bio=""
     )
@@ -90,7 +90,7 @@ def create_user_db(db: Session, username: str, nickname: str) -> User:
     return User(
         id=new_user.id,
         username=new_user.username,
-        nickname=new_user.nickname,
+        password=new_user.password,
         avatar=new_user.avatar,
         bio=new_user.bio
     )
@@ -98,6 +98,17 @@ def create_user_db(db: Session, username: str, nickname: str) -> User:
 
 def get_user_db(db: Session, user_id: str) -> User | None:
     orm = db.get(UserORM, user_id)
+    if not orm:
+        return None
+    return User(**orm.__dict__)
+
+
+def verify_user_db(db: Session, username: str, password: str) -> User | None:
+    """根據用戶名和密碼驗證用戶"""
+    orm = db.query(UserORM).filter(
+        UserORM.username == username,
+        UserORM.password == password
+    ).first()
     if not orm:
         return None
     return User(**orm.__dict__)

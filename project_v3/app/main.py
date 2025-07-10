@@ -42,6 +42,7 @@ from .crud_db import (
     update_item_positions,
     add_itinerary_item,
     delete_itinerary_item,
+    verify_user_db,
 )
 
 app = FastAPI(title="Local Travel Prototype")
@@ -101,10 +102,25 @@ def health_check():
 )
 def api_signup(
     username: str = Body(...),
-    nickname: str = Body(...),
+    password: str = Body(...),
     db: Session = Depends(get_db)
 ):
-    return create_user_db(db, username, nickname)
+    return create_user_db(db, username, password)
+
+@app.post(
+    "/login",
+    response_model=User,
+    summary="用户登录"
+)
+def api_login(
+    username: str = Body(...),
+    password: str = Body(...),
+    db: Session = Depends(get_db)
+):
+    user = verify_user_db(db, username, password)
+    if not user:
+        raise HTTPException(status_code=401, detail="用户名或密码错误")
+    return user
 
 @app.get(
     "/users/{user_id}",

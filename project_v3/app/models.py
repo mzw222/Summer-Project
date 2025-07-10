@@ -53,7 +53,7 @@ class ItineraryRequest(BaseModel):
 class User(BaseModel):
     id: str                # UUID
     username: str          # 登录账号
-    nickname: str          # 昵称
+    password: str          # 密码
     avatar: Optional[str] = None
     bio: Optional[str]    = ""
 
