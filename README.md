@@ -27,7 +27,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | GET  | `/attractions/{id}`                        | `id`（Path）                                                                          | 单个景点详情，含优缺点与来源链接 | `Attraction`                       |                  |
 | POST | `/itinerary`  (这个没用)                             |{ "destination": "北京", "days": 4, "preferences": ["文化", "历史"]}   | 基于选中景点生成行程草稿     | `List<{id,name,images,tags}>` |                  |
 | POST | /llm-itinerary | { "destination": "北京", "days": 4, "preferences": ["文化", "历史", "步行友好"], "must_visit": ["故宫"], "must_not_visit": ["长城", "王府井"] }（JSON Body） | 调用大模型 API 生成行程草稿 | { "itinerary": List<{ day, work_flow: [{ name, transport, time_spent, id, images }] }> } | |
-| POST | `/users`                                   | `?username=xxx&nickname=yyy`<br>（Query） 或 Body（可根据前端实际改）                            | 用户注册             | `User`                             |                  |
+| POST | `/users`                                   | `{ "username": "xxx", "password": "yyy" }`<br>（JSON Body）                            | 用户注册             | `User`                             |                  |
+| POST | `/login`                                   | `{ "username": "xxx", "password": "yyy" }`<br>（JSON Body）                            | 用户登录             | `User`                             |                  |
 | GET  | `/users/{user_id}`                         | `user_id`（Path）                                                                     | 获取用户资料           | `User`                             |                  |
 | POST | `/posts`                                   | `{ user_id:"uid", content:"文字", images:["url1","url2"] }`<br>（JSON Body）            | 创建一条用户帖子         | `Post`                             |                  |
 | GET  | `/posts`                                   | —                                                                                   | 拉取所有用户帖子列表       | `List<Post>`                       |                  |
@@ -36,7 +37,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | POST | `/posts/{post_id}/like`                    | `?user_id=uid`<br>（Query） 或 JSON Body                                               | 对帖子点赞／取消点赞       | \`{ result: "added"                | "deleted" }\`    |
 | GET  | `/posts/{post_id}/likes`                   | `post_id`（Path）                                                                     | 查询某贴的点赞总数        | `{ count: number }`                |                  |
 | POST | `/users/{user_id}/follow/{target_user_id}` | `user_id`、`target_user_id`（Path）                                                    | 关注／取关某用户         | \`{ result: "followed"             | "unfollowed" }\` |
-| POST | `/users/{user_id}/itineraries`             | `{ selected_ids: [...], days:2, preferences:[...] }`<br>（JSON Body），`user_id`（Path） | 保存当前行程到“我的行程”    | `ItineraryRecord`                  |                  |
+| POST | `/users/{user_id}/itineraries`             | `{ selected_ids: [...], days:2, preferences:[...] }`<br>（JSON Body），`user_id`（Path） | 保存当前行程到"我的行程"    | `ItineraryRecord`                  |                  |
 | GET  | `/users/{user_id}/itineraries`             | `user_id`（Path）                                                                     | 拉取某用户所有保存的行程     | `List<ItineraryRecord>`            |                  |
 
 ---
@@ -44,7 +45,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 **字段说明：**
 
 * **Attraction**：`{ id, name, description, lat, lon, tags[], images[], address, pros[], cons[], source_posts[] }`
-* **User**：`{ id, username, nickname, avatar?, bio }`
+* **User**：`{ id, username, password, avatar?, bio }`
 * **Post**：`{ id, user_id, content, images[], created_at }`
 * **Comment**：`{ id, post_id, user_id, content, created_at }`
 * **ItineraryRecord**：`{ id, user_id, title?, selected_ids[], days, preferences[], itinerary[], created_at }`
