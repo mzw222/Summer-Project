@@ -1,9 +1,10 @@
+# backend_local/app/main.py
+
 from fastapi import FastAPI, Query, Body, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 from typing import List, Optional
 from sqlalchemy.orm import Session
-import uuid,datetime,json,logging
 
 # 导入数据库引擎与依赖
 from .db import get_db, Base, engine
@@ -14,18 +15,18 @@ from .models import (
     RecommendRequest,
     ItineraryRequest,
     User,
+    Usertoitinerary,
+    Itinerarydetail,
     Post,
     Comment,
     ItineraryRecord,
     ItineraryItem,
     ItineraryDetail,
-    LLMIteraryRequest,
-    LLMIteraryResponse,
 )
 
 # 业务逻辑
-from .services import recommend, build_itinerary #detail
-from .ai_services import generate_llm_itinerary
+from .services import recommend, detail, build_itinerary
+
 # ORM CRUD
 from .crud_db import (
     create_user_db,
@@ -43,7 +44,13 @@ from .crud_db import (
     update_item_positions,
     add_itinerary_item,
     delete_itinerary_item,
-    verify_user_db,
+    insert_usertoitinenary,
+    get_usertoitinenary_via_itineraries_id,
+    get_usertoitinerary_via_user,
+    delete_usertoitinerary_via_itineraries_id,
+    insert_itinerarydetail,
+    get_itinerarydetails_by_itinerary,
+    delete_itinerarydetail_by_detail_id
 )
 
 app = FastAPI(title="Local Travel Prototype")
@@ -88,25 +95,12 @@ def api_detail(id: str):
     response_model=List[dict],
     summary="生成行程草稿"
 )
-def api_itinerary(
-    req: ItineraryRequest,
-    must_visit: List[str] = Body(...),
-    must_not_visit: List[str] = Body(...),
-    destination: str = Body(...)
-):
-    return build_itinerary(req, must_visit, must_not_visit, destination)
+def api_itinerary(req: ItineraryRequest):
+    return build_itinerary(req)
 
 @app.get("/", include_in_schema=False)
 def health_check():
     return {"status": "ok", "message": "Travel API is running"}
-
-@app.post(
-    "/llm-itineraries",
-    response_model=LLMIteraryResponse,
-    summary="使用大模型生成行程推荐"
-)
-def api_llm_itineraries(req: LLMIteraryRequest):
-    return generate_llm_itinerary(req)
 
 # ---- 用户注册 & 查询 ----
 @app.post(
@@ -116,25 +110,10 @@ def api_llm_itineraries(req: LLMIteraryRequest):
 )
 def api_signup(
     username: str = Body(...),
-    password: str = Body(...),
+    nickname: str = Body(...),
     db: Session = Depends(get_db)
 ):
-    return create_user_db(db, username, password)
-
-@app.post(
-    "/login",
-    response_model=User,
-    summary="用户登录"
-)
-def api_login(
-    username: str = Body(...),
-    password: str = Body(...),
-    db: Session = Depends(get_db)
-):
-    user = verify_user_db(db, username, password)
-    if not user:
-        raise HTTPException(status_code=401, detail="用户名或密码错误")
-    return user
+    return create_user_db(db, username, nickname)
 
 @app.get(
     "/users/{user_id}",
@@ -231,6 +210,7 @@ def api_toggle_follow(
 ):
     return toggle_follow_db(db, user_id, target_user_id)
 
+'''
 # ---- 我的行程：保存 & 列表 ----
 @app.post(
     "/users/{user_id}/itineraries",
@@ -243,16 +223,10 @@ def api_save_itinerary(
     selected_ids: List[str] = Body(..., description="已选景点 ID 列表"),
     days: int = Body(..., gt=0, description="行程天数"),
     preferences: List[str] = Body(..., description="行程偏好标签"),
-    must_visit: List[str] = Body(...),
-    must_not_visit: List[str] = Body(...),
-    destination: str = Body(...),
     db: Session = Depends(get_db)
 ):
     itinerary = build_itinerary(
-        ItineraryRequest(selected_ids=selected_ids, days=days, preferences=preferences),
-        must_visit,
-        must_not_visit,
-        destination
+        ItineraryRequest(selected_ids=selected_ids, days=days, preferences=preferences)
     )
     return save_itinerary_db(
         db, user_id, title, selected_ids, days, preferences, itinerary
@@ -318,22 +292,100 @@ def api_delete_item(
     db: Session = Depends(get_db)
 ):
     return delete_itinerary_item(db, item_id)
+'''
 
-# 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# 在路由处理函数中使用日志
+# 新增用户-行程关联接口
 @app.post(
-    "/itinerary",
-    response_model=List[dict],
-    summary="生成行程草稿"
+    "/users/{user_id}/itineraries",
+    response_model=Usertoitinerary,
+    summary="创建用户行程关联记录"
 )
-def api_itinerary(req: ItineraryRequest):
-    try:
-        logging.info("Received itinerary request: %s", req)
-        result = build_itinerary(req)
-        logging.info("Itinerary generated successfully: %s", result)
-        return result
-    except Exception as e:
-        logging.error("Error generating itinerary: %s", e)
-        raise HTTPException(status_code=500, detail="Internal server error")
+def api_create_user_itinerary(
+    user_id: str,
+    created_time: str = Body(..., description="行程创建时间戳"),
+    db: Session = Depends(get_db)
+):
+    return insert_usertoitinenary(db, user_id, created_time)
+
+# 新增通过行程ID查询用户关联
+@app.get(
+    "/itineraries/{itinerary_id}/user-association",
+    response_model=Usertoitinerary,
+    summary="查询特定行程的用户关联信息"
+)
+def api_get_user_itinerary(
+    itinerary_id: str,
+    db: Session = Depends(get_db)
+):
+    result = get_usertoitinenary_via_itineraries_id(db, itinerary_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="User-Itinerary association not found")
+    return result
+
+# 新增用户行程列表查询
+@app.get(
+    "/users/{user_id}/itineraries",
+    response_model=List[Usertoitinerary],
+    summary="获取用户所有行程关联记录"
+)
+def api_list_user_itineraries_new(
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+    return get_usertoitinerary_via_user(db, user_id)
+
+# 新增用户行程删除接口
+@app.delete(
+    "/itineraries/{itinerary_id}/user-association",
+    summary="删除用户-行程关联记录"
+)
+def api_delete_user_itinerary(
+    itinerary_id: str,
+    db: Session = Depends(get_db)
+):
+    return delete_usertoitinerary_via_itineraries_id(db, itinerary_id)
+
+# 新增行程详情创建接口
+@app.post(
+    "/itineraries/{itinerary_id}/details",
+    response_model=Itinerarydetail,
+    summary="添加行程详细项"
+)
+def api_create_itinerary_detail(
+    itinerary_id: int,
+    detail_data: dict = Body(..., example={
+        "name": "故宫",
+        "transport": "地铁8号线",
+        "time_spent": "3h",
+        "image": "https://example.com/palace.jpg"
+    }),
+    db: Session = Depends(get_db)
+):
+    return insert_itinerarydetail(
+        db,
+        itinerary_id,
+        **detail_data
+    )
+
+# 新增行程详情列表查询
+@app.get(
+    "/itineraries/{itinerary_id}/details",
+    response_model=List[Itinerarydetail],
+    summary="获取行程所有详细项"
+)
+def api_list_itinerary_details(
+    itinerary_id: int,
+    db: Session = Depends(get_db)
+):
+    return get_itinerarydetails_by_itinerary(db, itinerary_id)
+
+# 新增行程详情删除接口
+@app.delete(
+    "/itinerarydetails/{detail_id}",
+    summary="删除行程详细项"
+)
+def api_delete_itinerary_detail(
+    detail_id: int,
+    db: Session = Depends(get_db)
+):
+    return delete_itinerarydetail_by_detail_id(db, detail_id)

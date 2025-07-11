@@ -69,6 +69,19 @@ class User(BaseModel):
     avatar: Optional[str] = None
     bio: Optional[str]    = ""
 
+class Usertoitinerary(BaseModel):
+    itineraries_id: str
+    user_id: str
+    created_time: str
+    
+class Itinerarydetail(BaseModel):
+    attraction_detail_i: int
+    itineraries_id: int
+    name: str
+    transport: str
+    time_spent: str
+    image: str
+
 class Post(BaseModel):
     """
     社交平台上的用户帖子（UGC）

@@ -13,9 +13,12 @@ from .models_orm import (
     CommentORM,
     LikeORM,
     FollowORM,
+    UsertoitineraryORM,
+    ItinerarydetailORM,
     ItineraryORM,
     ItineraryItemORM,
 )
+
 from .models import (
     Attraction,
     User,
@@ -23,6 +26,8 @@ from .models import (
     Comment,
     Like,
     Follow,
+    Usertoitinerary,
+    Itinerarydetail,
     ItineraryRecord,
     ItineraryItem,
     ItineraryDetail,
@@ -76,11 +81,11 @@ def get_attraction_db(db: Session, attraction_id: str) -> Attraction | None:
 # 用户 CRUD
 # --------------------
 
-def create_user_db(db: Session, username: str, password: str) -> User:
+def create_user_db(db: Session, username: str, nickname: str) -> User:
     new_user = UserORM(
         id=str(uuid.uuid4()),
         username=username,
-        password=password,
+        nickname=nickname,
         avatar=None,
         bio=""
     )
@@ -90,7 +95,7 @@ def create_user_db(db: Session, username: str, password: str) -> User:
     return User(
         id=new_user.id,
         username=new_user.username,
-        password=new_user.password,
+        nickname=new_user.nickname,
         avatar=new_user.avatar,
         bio=new_user.bio
     )
@@ -98,17 +103,6 @@ def create_user_db(db: Session, username: str, password: str) -> User:
 
 def get_user_db(db: Session, user_id: str) -> User | None:
     orm = db.get(UserORM, user_id)
-    if not orm:
-        return None
-    return User(**orm.__dict__)
-
-
-def verify_user_db(db: Session, username: str, password: str) -> User | None:
-    """根據用戶名和密碼驗證用戶"""
-    orm = db.query(UserORM).filter(
-        UserORM.username == username,
-        UserORM.password == password
-    ).first()
     if not orm:
         return None
     return User(**orm.__dict__)
@@ -340,4 +334,77 @@ def delete_itinerary_item(db: Session, item_id: str) -> dict:
         return {"deleted": True}
     return {"deleted": False}
 
+#usertoitinerary表的插入和查找、删除
+def insert_usertoitinenary(db:Session, _user_id: str, _created_time: str):
+    orm = UsertoitineraryORM(
+        itineraries_id = _user_id + _created_time,
+        user_id = _user_id,
+        created_time = _created_time
+        )
+    db.merge(orm)
+    return Usertoitinerary(
+        itineraries_id = _user_id + _created_time,
+        user_id = _user_id,
+        created_time = _created_time
+        )
 
+def get_usertoitinenary_via_itineraries_id(db:Session, _itineraries_id: str) -> Usertoitinerary:
+    orm = db.get(UsertoitineraryORM, _itineraries_id)
+    if not orm:
+        return None
+    return Usertoitinerary(
+        **orm.__dict__
+        )
+
+def get_usertoitinerary_via_user(db: Session, user_id: str) -> List[Usertoitinerary]:
+    results = db.query(UsertoitineraryORM).filter(
+        UsertoitineraryORM.userid == user_id
+    ).all()
+    
+    return [Itinerarydetail(**item.__dict__) for item in results] if results else []
+
+def delete_usertoitinerary_via_itineraries_id(db:Session, _itineraries_id: str) -> dict:
+        itm = db.get(UsertoitineraryORM, _itineraries_id)
+        if itm:
+            db.delete(itm)
+            db.commit()
+            return {"deleted": True}
+        return {"deleted": False}
+
+#itinerarydetail表的插入、查找和删除
+def insert_itinerarydetail(db: Session, 
+                          _itineraries_id: int, 
+                          _name: str, 
+                          _transport: str, 
+                          _time_spent: str, 
+                          _image: str):
+    orm = ItinerarydetailORM(
+        itineraries_id=_itineraries_id,
+        name=_name,
+        transport=_transport,
+        time_spent=_time_spent,
+        image=_image
+    )
+    db.merge(orm)  
+    return Itinerarydetail(
+        attraction_detail_id=orm.attraction_detail_id,
+        itineraries_id=_itineraries_id,
+        name=_name,
+        transport=_transport,
+        time_spent=_time_spent,
+        image=_image
+    )
+
+def get_itinerarydetails_by_itinerary(db: Session, _itinerary_id: int) -> List[Itinerarydetail]:
+    orm_list = db.query(ItinerarydetailORM).filter(
+        ItinerarydetailORM.itineraries_id == _itinerary_id
+    ).all()
+    return [Itinerarydetail(**item.__dict__) for item in orm_list] if orm_list else []
+
+def delete_itinerarydetail_by_detail_id(db: Session, _detail_id: int) -> dict:
+    orm = db.get(ItinerarydetailORM, _detail_id)
+    if orm:
+        db.delete(orm)
+        db.commit()
+        return {"deleted": True}
+    return {"deleted": False}

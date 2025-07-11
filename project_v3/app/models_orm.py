@@ -39,6 +39,21 @@ class UserORM(Base):
     avatar   = Column(String)
     bio      = Column(Text)
 
+class UsertoitineraryORM(Base):
+    __tablename__ = "usertoitinerary"
+    itineraries_id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"))
+    created_time = Column(String)
+
+class ItinerarydetailORM(Base):
+    __tablename__ = "itinerarydetail"
+    attraction_detail_id = Column(Integer, primary_key=True)
+    itineraries_id = Column(Integer, ForeignKey("usertoitinerary.itineraries_id"))
+    name = Column(String)
+    transport = Column(String)
+    time_spent = Column(String)
+    image = Column(String)
+
 class PostORM(Base):
     __tablename__ = "posts"
     id         = Column(String, primary_key=True, index=True)
