@@ -19,29 +19,34 @@ Base.metadata.create_all(bind=engine)
 
 
 def import_attractions(csv_path: str):
-    # 尝试多种编码读取 CSV，解决 GBK/UTF-8 编码冲突
-    try:
-        df = pd.read_csv(csv_path, dtype=str, encoding='utf-8').fillna("")
-    except UnicodeDecodeError:
-        df = pd.read_csv(csv_path, dtype=str, encoding='gb18030').fillna("")
+    df = pd.read_excel(csv_path, dtype=str)
+    df['评论数']=df['评论数'].fillna(0)
     db = SessionLocal()
     for _, row in df.iterrows():
-        tags = [t.strip() for t in row.get("景区标签列表", "").split(",") if t.strip()]
-        imgs = [u.strip() for u in row.get("景区展示图片", "").split(",") if u.strip()]
-        try:
-            lat = float(row.get("景区纬度", "0"))
-            lon = float(row.get("景区经度", "0"))
-        except ValueError:
-            continue  # 无效坐标跳过
         orm = AttractionORM(
-            id=row.get("景区id", str(uuid.uuid4())),
-            name=row.get("景区名称", ""),
-            description=row.get("介绍", ""),
-            lat=lat,
-            lon=lon,
-            tags=json.dumps(tags, ensure_ascii=False),
-            images=json.dumps(imgs, ensure_ascii=False),
-            address=row.get("景区地址", ""),
+            id=row.get("景区id"),
+            city=row.get("城市",''),
+            url=row.get("链接",''),
+            area_name=row.get('区域名称',''),
+            attraction_name= row.get('景区名称',''),
+            comment_score= float(row.get('景区评论得分',0)),
+            star        = row.get('星级',''),
+            pic_pre     = row.get('景区展示图片',''),
+            price       = float(row.get('景区门票价格',0)),
+            free        = row.get('景区是否免费',''),
+            character   = row.get('景区特点描述',''),
+            lat         = float(row.get('景区纬度',0)),
+            lon         = float(row.get('景区经度',0)),
+            hot         = float(row.get('景区热度',0)),
+            address     = row.get('景区地址',''),
+            tags_ai     = row.get('tags',''),
+            advantage_1 = row.get('优点汇总1',''),
+            advantage_2 = row.get('优点汇总2',''),
+            advantage_3 = row.get('优点汇总3',''),
+            disadvantage_1 = row.get('缺点汇总1',''),
+            disadvantage_2 = row.get('缺点汇总2',''),
+            disadvantage_3 = row.get('缺点汇总3',''),
+            comment_number = int(row.get('评论数',0))
         )
         db.merge(orm)
     db.commit()
@@ -74,9 +79,9 @@ def import_ctrip_comments(xlsx_path: str):
         cid = str(uuid.uuid4())
         orm = CommentORM(
             id=cid,
-            post_id=row.get("关联PostID", ""),
+            attraction_id=row.get("关联PostID", ""),
             user_id=row.get("评论用户ID", ""),
-            content=row.get("评论内容", ""),
+            content1=row.get("评论内容", ""),
             created_at=datetime.datetime.utcnow()
         )
         db.add(orm)
@@ -87,7 +92,7 @@ def import_ctrip_comments(xlsx_path: str):
 
 if __name__ == "__main__":
     base = os.path.abspath(os.path.join(current_dir, "..", "data"))
-    import_attractions(os.path.join(base, "北京.csv"))
+    import_attractions(os.path.join(base, "D:/desktop/项目/code/Summer-Project-3/project_v3/data/北京景点数据.xlsx"))
     import_xhs_posts(os.path.join(base, "xiaohongshu_posts.xlsx"))
     import_ctrip_comments(os.path.join(base, "ctrip_comments.xlsx"))
     print("✅ 数据导入完成。")
