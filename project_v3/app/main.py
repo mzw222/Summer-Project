@@ -26,6 +26,9 @@ from .models import (
     Attraction_with_tags
 )
 
+# 导入 ORM 模型
+from .models_orm import UserORM
+
 # 业务逻辑
 from .services import recommend, build_itinerary #detail
 from .ai_services import generate_llm_itinerary
@@ -122,10 +125,33 @@ def api_llm_itineraries(req: LLMIteraryRequest):
 )
 def api_signup(
     username: str = Body(...),
-    nickname: str = Body(...),
+    password: str = Body(...),
     db: Session = Depends(get_db)
 ):
-    return create_user_db(db, username, nickname)
+    return create_user_db(db, username, password)
+
+@app.post(
+    "/login",
+    response_model=User,
+    summary="用户登录"
+)
+def api_login(
+    username: str = Body(...),
+    password: str = Body(...),
+    db: Session = Depends(get_db)
+):
+    # 查找用戶
+    user = db.query(UserORM).filter(UserORM.username == username).first()
+    if not user or user.password != password:
+        raise HTTPException(status_code=401, detail="用户名或密码错误")
+    
+    return User(
+        id=user.id,
+        username=user.username,
+        password=user.password,
+        avatar=user.avatar,
+        bio=user.bio
+    )
 
 @app.get(
     "/users/{user_id}",
