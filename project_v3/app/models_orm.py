@@ -8,19 +8,34 @@ from .db import Base
 class AttractionORM(Base):
     __tablename__ = "attractions"
     id          = Column(String, primary_key=True, index=True)
-    name        = Column(String, index=True)
-    description = Column(Text)
+    city        = Column(String)
+    url         = Column(String)
+    area_name    = Column(String)
+    attraction_name= Column(String, index=True)
+    comment_score= Column(Float)
+    star        = Column(String)
+    pic_pre     = Column(String)
+    price       = Column(Float)
+    free        = Column(String)
+    character   = Column(String)
     lat         = Column(Float)
     lon         = Column(Float)
-    tags        = Column(Text)   # 存 JSON 列表
-    images      = Column(Text)   # 存 JSON 列表
+    hot         = Column(Float)
     address     = Column(String)
+    tags_ai     = Column(String)
+    advantage_1 = Column(Text)
+    advantage_2 = Column(Text)
+    advantage_3 = Column(Text)
+    disadvantage_1 = Column(Text)
+    disadvantage_2 = Column(Text)
+    disadvantage_3 = Column(Text)
+    comment_number = Column(Integer)
 
 class UserORM(Base):
     __tablename__ = "users"
     id       = Column(String, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    password = Column(String)
+    nickname = Column(String)
     avatar   = Column(String)
     bio      = Column(Text)
 
@@ -36,9 +51,10 @@ class PostORM(Base):
 class CommentORM(Base):
     __tablename__ = "comments"
     id         = Column(String, primary_key=True, index=True)
-    post_id    = Column(String, ForeignKey("posts.id"))
+    attraction_id    = Column(String, ForeignKey("attractions.id"))
     user_id    = Column(String, ForeignKey("users.id"))
-    content    = Column(Text)
+    content1    = Column(Text)
+    content2    = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class LikeORM(Base):

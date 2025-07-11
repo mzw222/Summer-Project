@@ -9,17 +9,29 @@ from typing import List, Optional
 
 class Attraction(BaseModel):
     id: str
-    name: str
-    description: Optional[str]
+    city: str
+    url: Optional[str]
+    area_name: Optional[str]
+    attraction_name: str
+    comment_score: float 
+    star: Optional[str] 
+    pic_pre: Optional[str]
+    price: float 
+    free: Optional[str] 
+    character: Optional[str]
     lat: float
     lon: float
-    tags: List[str]
-    images: List[str] = []        # 小程序展示时作为封面图
-    address: Optional[str] = None # 详情页显示的地址
-    pros: List[str] = []
-    cons: List[str] = []
-    source_posts: List[str] = []   # 原始爬取的评论来源链接
-
+    hot: float
+    address: Optional[str] 
+    tags_ai: Optional[str]
+    advantage_1: Optional[str]
+    advantage_2: Optional[str]
+    advantage_3: Optional[str]
+    disadvantage_1: Optional[str]
+    disadvantage_2: Optional[str]
+    disadvantage_3: Optional[str]
+    comment_num: int
+    
 class SourcePost(BaseModel):
     """
     用于存储爬虫抓取的小红书/携程等点评内容
@@ -53,7 +65,7 @@ class ItineraryRequest(BaseModel):
 class User(BaseModel):
     id: str                # UUID
     username: str          # 登录账号
-    password: str          # 密码
+    nickname: str          # 昵称
     avatar: Optional[str] = None
     bio: Optional[str]    = ""
 
@@ -104,24 +116,3 @@ class ItineraryItem(BaseModel):
 class ItineraryDetail(BaseModel):
     itinerary_id: str
     items: List[ItineraryItem]  # 按 day, position 排序
-
-class LLMIteraryRequest(BaseModel):
-    目的地: str
-    必去的景点: List[str]
-    必不去的景点: List[str]
-    天数: str
-    preferences: List[str]
-
-class ItineraryStep(BaseModel):
-    name: str
-    transport: str
-    time_spent: str
-    id: Optional[str] = None  # 添加景区 ID 字段
-    images: Optional[str] = None  # 添加景区展示图片字段
-
-class LLMIteraryDay(BaseModel):
-    day: int
-    work_flow: List[ItineraryStep]
-
-class LLMIteraryResponse(BaseModel):
-    itinerary: List[LLMIteraryDay]
