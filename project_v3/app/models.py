@@ -129,3 +129,24 @@ class ItineraryItem(BaseModel):
 class ItineraryDetail(BaseModel):
     itinerary_id: str
     items: List[ItineraryItem]  # 按 day, position 排序
+
+class LLMIteraryRequest(BaseModel):
+    目的地: str
+    必去的景点: List[str]
+    必不去的景点: List[str]
+    天数: str
+    preferences: List[str]
+
+class ItineraryStep(BaseModel):
+    name: str
+    transport: str
+    time_spent: str
+    id: Optional[str] = None  # 添加景区 ID 字段
+    images: Optional[str] = None  # 添加景区展示图片字段
+
+class LLMIteraryDay(BaseModel):
+    day: int
+    work_flow: List[ItineraryStep]
+
+class LLMIteraryResponse(BaseModel):
+    itinerary: List[LLMIteraryDay]

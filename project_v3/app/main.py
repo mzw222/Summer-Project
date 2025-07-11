@@ -22,10 +22,13 @@ from .models import (
     ItineraryRecord,
     ItineraryItem,
     ItineraryDetail,
+    LLMIteraryRequest,
+    LLMIteraryResponse,
 )
 
 # 业务逻辑
-from .services import recommend, detail, build_itinerary
+from .services import recommend, build_itinerary #detail
+from .ai_services import generate_llm_itinerary
 
 # ORM CRUD
 from .crud_db import (
@@ -101,6 +104,14 @@ def api_itinerary(req: ItineraryRequest):
 @app.get("/", include_in_schema=False)
 def health_check():
     return {"status": "ok", "message": "Travel API is running"}
+
+@app.post(
+    "/llm-itineraries",
+    response_model=LLMIteraryResponse,
+    summary="使用大模型生成行程推荐"
+)
+def api_llm_itineraries(req: LLMIteraryRequest):
+    return generate_llm_itinerary(req)
 
 # ---- 用户注册 & 查询 ----
 @app.post(
