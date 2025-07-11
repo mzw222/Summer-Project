@@ -1,4 +1,9 @@
-# project_v3/app/services.py
+import sys
+import os
+
+# 获取项目根目录
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
 
 from typing import List
 import json
@@ -6,19 +11,80 @@ import json
 from .crud_db import list_attractions_db, get_attraction_db
 from .crud import get_posts_for
 from .ai_services import generate_llm_itinerary
-from .models import RecommendRequest, ItineraryRequest, Attraction
+from .models import RecommendRequest, ItineraryRequest, Attraction, Attraction_with_tags
 from .db import SessionLocal
 
-def recommend(req: RecommendRequest) -> List[Attraction]:
+def recommend(req: RecommendRequest) -> List[Attraction_with_tags]:
     """
-    查询候选景点，并可根据偏好进行二次过滤或排序（TODO）。
+    查询候选景点，并根据偏好进行二次过滤或排序。
     """
     db = SessionLocal()
     try:
         # 从数据库中拉取所有符合目的地的景点
         cands = list_attractions_db(db, req.destination)
-        # TODO: 按 req.preferences 做打分或二次筛选
-        return cands
+
+        # 计算每个景点的preference词语匹配个数和hot值
+        scored_cands = []
+        for cand in cands:
+            # 将 tags 字符串转换为列表
+            tags = cand.tags.split(',') if cand.tags else []
+            match_count = len(set(tags).intersection(set(req.preferences)))
+            # 假设 Attraction_with_tags 有 hot 属性，如果没有需要调整
+            hot = getattr(cand, 'hot', 0)  # 如果没有 hot 属性，默认为 0
+            scored_cands.append((cand, match_count, hot))
+
+        # 按照preference词语匹配个数和hot值排序
+        scored_cands.sort(key=lambda x: (-x[1], -x[2]))
+
+        # 取前十个结果
+        top_ten = scored_cands[:10]
+
+        # 提取景点信息
+        result = []
+        for cand, _, _ in top_ten:
+            result.append({
+                "id": cand.id,
+                "name": cand.name,
+                "images": cand.images,
+                "tags": cand.tags
+            })
+
+        return result
+    finally:
+        db.close()
+    """
+    查询候选景点，并根据偏好进行二次过滤或排序。
+    """
+    db = SessionLocal()
+    try:
+        # 从数据库中拉取所有符合目的地的景点
+        cands = list_attractions_db(db, req.destination)
+
+        # 计算每个景点的preference词语匹配个数和hot值
+        scored_cands = []
+        for cand in cands:
+            # 假设tags_ai是一个字符串，需要先将其转换为列表
+            tags_ai = cand.tags_ai.split(',') if cand.tags_ai else []
+            match_count = len(set(tags_ai).intersection(set(req.preferences)))
+            scored_cands.append((cand, match_count, cand.hot))
+
+        # 按照preference词语匹配个数和hot值排序
+        scored_cands.sort(key=lambda x: (-x[1], -x[2]))
+
+        # 取前十个结果
+        top_ten = scored_cands[:10]
+
+        # 提取景点信息
+        result = []
+        for cand, _, _ in top_ten:
+            result.append({
+                "id": cand.id,
+                "name": cand.name,
+                "images": cand.images[0] if cand.images else "",
+                "tags": str(cand.tags)
+            })
+
+        return result
     finally:
         db.close()
 

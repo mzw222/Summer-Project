@@ -31,33 +31,27 @@ from .models import (
     ItineraryRecord,
     ItineraryItem,
     ItineraryDetail,
+    RecommendRequest,
+    Attraction_with_tags,
 )
 
 # --------------------
 # 景点 CRUD
 # --------------------
 
-def list_attractions_db(db: Session, dest: str) -> List[Attraction]:
+def list_attractions_db(db: Session, dest: str) -> List[Attraction_with_tags]:
     q = db.query(AttractionORM)
     if dest:
-        q = q.filter(AttractionORM.name.contains(dest))
-    result: List[Attraction] = []
+        q = q.filter(AttractionORM.attraction_name.contains(dest))
+    result: List[Attraction_with_tags] = []
     for orm in q.all():
-        result.append(Attraction(
+        result.append(Attraction_with_tags(
             id=orm.id,
-            name=orm.name,
-            description=orm.description,
-            lat=orm.lat,
-            lon=orm.lon,
-            tags=json.loads(orm.tags or "[]"),
-            images=json.loads(orm.images or "[]"),
-            address=orm.address,
-            pros=[],
-            cons=[],
-            source_posts=[]
+            name=orm.attraction_name,
+            images=orm.pic_pre or "",
+            tags=orm.tags_ai or ""
         ))
     return result
-
 
 def get_attraction_db(db: Session, attraction_id: str) -> Attraction | None:
     orm = db.get(AttractionORM, attraction_id)

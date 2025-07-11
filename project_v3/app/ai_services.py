@@ -94,21 +94,19 @@ def get_attraction_info(name):
     """从数据库中获取景点的id和图片信息"""
     db = SessionLocal()
     try:
-        # 查询景点信息
-        attraction = db.query(AttractionORM).filter(AttractionORM.name == name).first()
-        if attraction:
-            # 解析图片列表
-            images = []
-            if attraction.images:
-                try:
-                    images = json.loads(attraction.images)
-                except json.JSONDecodeError:
-                    print(f"Failed to decode images for attraction {name}")
-            return attraction.id, images[0] if images else ""
-        return None, None
+        # 使用 like 方法进行模糊查询
+        attractions = db.query(AttractionORM).filter(AttractionORM.attraction_name.like(f"%{name}%")).all()
+        if attractions:
+            # 选择第一个匹配的景点
+            attraction = attractions[0]
+            attraction_id = attraction.id
+            image = attraction.pic_pre
+            actual_name = attraction.attraction_name  # 获取实际的景点名称
+            return attraction_id, image, actual_name
+        return None, None, None
     except Exception as e:
         print(f"Error querying database for attraction {name}: {e}")
-        return None, None
+        return None, None, None
     finally:
         db.close()
 
@@ -136,7 +134,9 @@ def generate_llm_itinerary(req: LLMIteraryRequest):
                             time_spent = "未指定" 
                         name = step.get('name')
                         print(f"Searching for attraction: {name}")  # 添加日志检查 name 字段
-                        attraction_id, image = get_attraction_info(name)
+                        attraction_id, image, actual_name = get_attraction_info(name)
+                        if actual_name:
+                            name = actual_name  # 使用实际的景点名称
                         new_step = ItineraryStep(
                             name=name,
                             transport=step.get('transport'),
@@ -151,4 +151,3 @@ def generate_llm_itinerary(req: LLMIteraryRequest):
         except json.JSONDecodeError:
             return None
     return None
-    

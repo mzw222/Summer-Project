@@ -53,6 +53,12 @@ class RecommendRequest(BaseModel):
     days: int
     preferences: List[str]
 
+class Attraction_with_tags(BaseModel):
+    id: str
+    name: str
+    images: str
+    tags: str
+
 class ItineraryRequest(BaseModel):
     selected_ids: List[str]
     days: int
