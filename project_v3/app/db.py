@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 # 1) 读取 .env 中的 DATABASE_URL
 load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./scripts/dev.db")
 
 # 2) 创建 SQLAlchemy 引擎
 engine = create_engine(
