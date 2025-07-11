@@ -1,4 +1,5 @@
 # project_v3/app/services.py
+
 from typing import List
 import json
 
@@ -20,25 +21,7 @@ def recommend(req: RecommendRequest) -> List[Attraction]:
         return cands
     finally:
         db.close()
-"""
-def detail(attraction_id: str) -> Attraction:
-  
-    读取单个景点基础信息并调用 AI 对爬取的评论做优缺点总结。
-   
-    db = SessionLocal()
-    try:
-        base = get_attraction_db(db, attraction_id)
-    finally:
-        db.close()
 
-    if base is None:
-        raise ValueError(f"Attraction {attraction_id} not found")
-
-    # 从 JSON/Excel/爬虫中拿原始评论
-    posts = get_posts_for(attraction_id)
-    # 由 AI 服务补全 pros/cons、source_posts
-    return summarize_pros_cons(base, posts)
- """
 def build_itinerary(req: ItineraryRequest) -> List[dict]:
     """
     根据用户选中的景点与偏好，调用 AI 生成结构化行程方案。
@@ -55,7 +38,7 @@ def build_itinerary(req: ItineraryRequest) -> List[dict]:
     if not selected:
         return []
 
- # 构建LLMIteraryRequest对象
+    # 构建 LLMIteraryRequest 对象
     llm_req = LLMIteraryRequest(
         目的地="北京",  # 根据实际情况设置目的地
         天数=req.days,
@@ -66,8 +49,17 @@ def build_itinerary(req: ItineraryRequest) -> List[dict]:
     )
 
     # 调用 AI 生成行程
-    llm_itinerary = generate_llm_itinerary(req)
+    llm_itinerary = generate_llm_itinerary(llm_req)
     if llm_itinerary:
         # 将 LLMIteraryResponse 对象转换为 List[dict]
-        return [day.dict() for day in llm_itinerary.itinerary]
+        itinerary_list = []
+        for day in llm_itinerary.itinerary:
+            day_dict = day.dict()
+            work_flow_list = []
+            for step in day_dict["work_flow"]:
+                step_dict = step.dict()
+                work_flow_list.append(step_dict)
+            day_dict["work_flow"] = work_flow_list
+            itinerary_list.append(day_dict)
+        return itinerary_list
     return []

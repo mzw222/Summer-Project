@@ -116,6 +116,8 @@ class ItineraryStep(BaseModel):
     name: str
     transport: str
     time_spent: str
+    id: Optional[str] = None  # 添加景区 ID 字段
+    images: Optional[str] = None  # 添加景区展示图片字段
 
 class LLMIteraryDay(BaseModel):
     day: int

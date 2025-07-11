@@ -1,10 +1,10 @@
-# project_v3/app/ai_services.py
-
 import appbuilder
 import os
 import re
 import json
 from .models import LLMIteraryRequest, LLMIteraryResponse, ItineraryStep 
+from .db import SessionLocal  
+from .models_orm import AttractionORM 
 
 # 设置环境变量
 os.environ["APPBUILDER_TOKEN"] = 'Bearer bce-v3/ALTAK-acJ0DM86Ly28qeK89yA74/f5ec5af120f5d8efc28948e54314b33205595368'
@@ -90,6 +90,28 @@ def fix_json_format(json_str):
         print(f"JSON格式修复失败: {e}")
         return json_str
 
+def get_attraction_info(name):
+    """从数据库中获取景点的id和图片信息"""
+    db = SessionLocal()
+    try:
+        # 查询景点信息
+        attraction = db.query(AttractionORM).filter(AttractionORM.name == name).first()
+        if attraction:
+            # 解析图片列表
+            images = []
+            if attraction.images:
+                try:
+                    images = json.loads(attraction.images)
+                except json.JSONDecodeError:
+                    print(f"Failed to decode images for attraction {name}")
+            return attraction.id, images[0] if images else ""
+        return None, None
+    except Exception as e:
+        print(f"Error querying database for attraction {name}: {e}")
+        return None, None
+    finally:
+        db.close()
+
 def generate_llm_itinerary(req: LLMIteraryRequest):
     # 构建请求文本
     request_text = f"我要去{req.目的地}旅游{req.天数}天，必去的景点有{','.join(req.必去的景点)}，必不去的景点有{','.join(req.必不去的景点)}，偏好是{','.join(req.preferences)}，给个攻略"
@@ -106,20 +128,27 @@ def generate_llm_itinerary(req: LLMIteraryRequest):
             itinerary = json.loads(fixed_json)
             # 处理字段名和 time_spent 字段
             for day in itinerary:
-                if 'work flow' in day:
-                    day['work_flow'] = []
-                    for step in day['work flow']:
+                if 'work_flow' in day:
+                    new_work_flow = []
+                    for step in day['work_flow']:
                         time_spent = step.get('time_spent')
                         if time_spent is None:
                             time_spent = "未指定" 
+                        name = step.get('name')
+                        print(f"Searching for attraction: {name}")  # 添加日志检查 name 字段
+                        attraction_id, image = get_attraction_info(name)
                         new_step = ItineraryStep(
-                            name=step.get('name'),
+                            name=name,
                             transport=step.get('transport'),
                             time_spent=time_spent
                         )
-                        day['work_flow'].append(new_step)
-                    del day['work flow']
+                        step_dict = new_step.dict()
+                        step_dict['id'] = attraction_id if attraction_id else ""
+                        step_dict['images'] = image if image else ""
+                        new_work_flow.append(step_dict)
+                    day['work_flow'] = new_work_flow
             return LLMIteraryResponse(itinerary=itinerary)
         except json.JSONDecodeError:
             return None
     return None
+    
