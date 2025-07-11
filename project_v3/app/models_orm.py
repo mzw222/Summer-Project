@@ -35,7 +35,7 @@ class UserORM(Base):
     __tablename__ = "users"
     id       = Column(String, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    nickname = Column(String)
+    password = Column(String)
     avatar   = Column(String)
     bio      = Column(Text)
 
