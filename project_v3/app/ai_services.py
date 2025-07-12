@@ -2,9 +2,13 @@ import appbuilder
 import os
 import re
 import json
-from .models import LLMIteraryRequest, LLMIteraryResponse, ItineraryStep 
-from .db import SessionLocal  
-from .models_orm import AttractionORM 
+import logging
+from .models import LLMIteraryRequest, LLMIteraryResponse, ItineraryStep, UserUploadItineraryRequest, UserUploadItineraryResponse
+from .db import SessionLocal
+from .models_orm import AttractionORM
+
+# 设置日志格式
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 设置环境变量
 os.environ["APPBUILDER_TOKEN"] = 'Bearer bce-v3/ALTAK-acJ0DM86Ly28qeK89yA74/f5ec5af120f5d8efc28948e54314b33205595368'
@@ -87,7 +91,7 @@ def fix_json_format(json_str):
         json_obj = json.loads(json_str)
         return json.dumps(json_obj, ensure_ascii=False, indent=2)
     except json.JSONDecodeError as e:
-        print(f"JSON格式修复失败: {e}")
+        logging.error(f"JSON格式修复失败: {e}")
         return json_str
 
 def get_attraction_info(name):
@@ -105,7 +109,7 @@ def get_attraction_info(name):
             return attraction_id, image, actual_name
         return None, None, None
     except Exception as e:
-        print(f"Error querying database for attraction {name}: {e}")
+        logging.error(f"Error querying database for attraction {name}: {e}")
         return None, None, None
     finally:
         db.close()
@@ -113,11 +117,17 @@ def get_attraction_info(name):
 def generate_llm_itinerary(req: LLMIteraryRequest):
     # 构建请求文本
     request_text = f"我要去{req.目的地}旅游{req.天数}天，必去的景点有{','.join(req.必去的景点)}，必不去的景点有{','.join(req.必不去的景点)}，偏好是{','.join(req.preferences)}，给个攻略"
+    logging.debug(f"Sending request to agent: {request_text}")
+
     # 创建会话
     conversation_id = builder.create_conversation()
+    logging.debug(f"Created conversation with ID: {conversation_id}")
+
     # 运行对话
     out = builder.run(conversation_id, request_text)
     answer = out.content.answer
+    logging.debug(f"Received answer from agent: {answer}")
+
     # 提取回答中的JSON内容
     json_content = extract_json_from_text(answer)
     if json_content:
@@ -131,9 +141,9 @@ def generate_llm_itinerary(req: LLMIteraryRequest):
                     for step in day['work_flow']:
                         time_spent = step.get('time_spent')
                         if time_spent is None:
-                            time_spent = "未指定" 
+                            time_spent = "未指定"
                         name = step.get('name')
-                        print(f"Searching for attraction: {name}")  # 添加日志检查 name 字段
+                        logging.debug(f"Searching for attraction: {name}")  # 添加日志检查 name 字段
                         attraction_id, image, actual_name = get_attraction_info(name)
                         if actual_name:
                             name = actual_name  # 使用实际的景点名称
@@ -151,3 +161,46 @@ def generate_llm_itinerary(req: LLMIteraryRequest):
         except json.JSONDecodeError:
             return None
     return None
+
+# 设置环境变量
+os.environ["APPBUILDER_TOKEN"] = 'Bearer bce-v3/ALTAK-acJ0DM86Ly28qeK89yA74/f5ec5af120f5d8efc28948e54314b33205595368'
+app_id = '9fdbe1b2-2544-4c7e-b266-4910d15ce6f9'
+
+# 初始化智能体
+builder = appbuilder.AppBuilderClient(app_id)
+
+def generate_updated_itinerary(req):
+    try:
+        # 验证输入
+        if not isinstance(req, UserUploadItineraryRequest):
+            logging.error("Invalid input: req must be an instance of UserUploadItineraryRequest")
+            return None
+
+        # 构建请求文本
+        request_text = json.dumps(req.dict())
+        logging.debug(f"Sending request to agent: {request_text}")
+
+        # 创建会话
+        conversation_id = builder.create_conversation()
+        logging.debug(f"Created conversation with ID: {conversation_id}")
+
+        # 运行对话
+        out = builder.run(conversation_id, request_text)
+        answer = out.content.answer
+        logging.debug(f"Received answer from agent: {answer}")
+
+        # 移除 Markdown 代码块标记
+        clean_answer = answer.replace("```json", "").replace("```", "").strip()
+
+        # 解析智能体返回的结果
+        try:
+            updated_itinerary = json.loads(clean_answer)
+            return UserUploadItineraryResponse(**updated_itinerary)
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse agent's answer as JSON: {e}")
+            logging.error(f"Answer content: {clean_answer}")
+            return None
+
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        return None

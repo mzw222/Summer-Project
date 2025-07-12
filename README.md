@@ -23,9 +23,9 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | 方法   | 路径                                         | 参数示例／位置                                                                             | 功能说明             | 返回模型                               |                  |
 | ---- | ------------------------------------------ | ----------------------------------------------------------------------------------- | ---------------- | ---------------------------------- | ---------------- |
 | GET  | `/`                                        | —                                                                                   | 健康检查，返回服务状态      | `{ status, message }`              |                  |
-| POST  | `/attractions`                             | { "destination": "北京", "days": 4, "preferences": ["文化", "历史"]}                  | 搜索/推荐景点列表        |`List<{id,name,images,tags}>`                |                  |
+| POST  | `/attractions`                             |` { "destination": "北京", "days": 4, "preferences": ["文化", "历史"]}    `              | 搜索/推荐景点列表        |`List<{id,name,images,tags}>`                |                  |
 | GET  | `/attractions/{id}`                        | `id`（Path）                                                                          | 单个景点详情，含优缺点与来源链接 | `Attraction`                       |                  |
-| POST | `/itinerary`  (这个没用)                             |{ "destination": "北京", "days": 4, "preferences": ["文化", "历史"]}   | 基于选中景点生成行程草稿     | `List<{id,name,images,tags}>` |                  |
+| POST | `/itinerary`  (这个暂时没用)                             |`{ "destination": "北京", "days": 4, "preferences": ["文化", "历史"]} `  | 基于选中景点生成行程草稿     | `List<{id,name,images,tags}>` |                  |
 | POST | /llm-itinerary | { "destination": "北京", "days": 4, "preferences": ["文化", "历史", "步行友好"], "must_visit": ["故宫"], "must_not_visit": ["长城", "王府井"] }（JSON Body） | 调用大模型 API 生成行程草稿 | { "itinerary": List<{ day, work_flow: [{ name, transport, time_spent, id, images }] }> } | |
 | POST | `/users`                                   | `{ "username": "xxx", "password": "yyy" }`<br>（JSON Body）                            | 用户注册             | `User`                             |                  |
 | POST | `/login`                                   | `{ "username": "xxx", "password": "yyy" }`<br>（JSON Body）                            | 用户登录             | `User`                             |                  |
@@ -37,7 +37,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | POST | `/posts/{post_id}/like`                    | `?user_id=uid`<br>（Query） 或 JSON Body                                               | 对帖子点赞／取消点赞       | \`{ result: "added"                | "deleted" }\`    |
 | GET  | `/posts/{post_id}/likes`                   | `post_id`（Path）                                                                     | 查询某贴的点赞总数        | `{ count: number }`                |                  |
 | POST | `/users/{user_id}/follow/{target_user_id}` | `user_id`、`target_user_id`（Path）                                                    | 关注／取关某用户         | \`{ result: "followed"             | "unfollowed" }\` |
+<<<<<<< Updated upstream
 | POST | `/users/{user_id}/itineraries`             | `{ selected_ids: [...], days:2, preferences:[...] }`<br>（JSON Body），`user_id`（Path） | 保存当前行程到"我的行程"    | `ItineraryRecord`                  |                  |
+=======
+| POST  | `/upload_itinerary`                             | `{ "itinerary": List<{ day, work_flow: [{ name, id, images }] }> }  `               | 上传行程数据并获取更新后的数据         |`{ "itinerary": List<{ day, work_flow: [{ name,transport，time_spent,id, images }] }> }`                |                  |
+| POST | `/users/{user_id}/itineraries`             | `{ selected_ids: [...], days:2, preferences:[...] }`<br>（JSON Body），`user_id`（Path） | 保存当前行程到“我的行程”    | `ItineraryRecord`                  |                  |
+>>>>>>> Stashed changes
 | GET  | `/users/{user_id}/itineraries`             | `user_id`（Path）                                                                     | 拉取某用户所有保存的行程     | `List<ItineraryRecord>`            |                  |
 
 ---

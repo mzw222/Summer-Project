@@ -23,7 +23,9 @@ from .models import (
     ItineraryDetail,
     LLMIteraryRequest,
     LLMIteraryResponse,
-    Attraction_with_tags
+    Attraction_with_tags,
+    UserUploadItineraryResponse,
+    UserUploadItineraryRequest
 )
 
 # 导入 ORM 模型
@@ -31,7 +33,8 @@ from .models_orm import UserORM
 
 # 业务逻辑
 from .services import recommend, build_itinerary #detail
-from .ai_services import generate_llm_itinerary
+from .ai_services import generate_llm_itinerary,generate_updated_itinerary
+
 
 # ORM CRUD
 from .crud_db import (
@@ -331,6 +334,17 @@ def api_delete_item(
 ):
     return delete_itinerary_item(db, item_id)
 '''
+@app.post(
+    "/upload-itinerary",
+    response_model=UserUploadItineraryResponse,
+    summary="上传行程数据并获取更新后的行程"
+)
+def api_upload_itinerary(req: UserUploadItineraryRequest):
+    updated_itinerary = generate_updated_itinerary(req)
+    if updated_itinerary:
+        return updated_itinerary
+    else:
+        raise HTTPException(status_code=500, detail="Failed to generate updated itinerary")
 
 # 新增用户-行程关联接口
 @app.post(
@@ -383,27 +397,6 @@ def api_delete_user_itinerary(
 ):
     return delete_usertoitinerary_via_itineraries_id(db, itinerary_id)
 
-# 新增行程详情创建接口
-@app.post(
-    "/itineraries/{itinerary_id}/details",
-    response_model=Itinerarydetail,
-    summary="添加行程详细项"
-)
-def api_create_itinerary_detail(
-    itinerary_id: int,
-    detail_data: dict = Body(..., example={
-        "name": "故宫",
-        "transport": "地铁8号线",
-        "time_spent": "3h",
-        "image": "https://example.com/palace.jpg"
-    }),
-    db: Session = Depends(get_db)
-):
-    return insert_itinerarydetail(
-        db,
-        itinerary_id,
-        **detail_data
-    )
 
 # 新增行程详情列表查询
 @app.get(
@@ -417,13 +410,3 @@ def api_list_itinerary_details(
 ):
     return get_itinerarydetails_by_itinerary(db, itinerary_id)
 
-# 新增行程详情删除接口
-@app.delete(
-    "/itinerarydetails/{detail_id}",
-    summary="删除行程详细项"
-)
-def api_delete_itinerary_detail(
-    detail_id: int,
-    db: Session = Depends(get_db)
-):
-    return delete_itinerarydetail_by_detail_id(db, detail_id)

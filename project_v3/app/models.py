@@ -156,3 +156,38 @@ class LLMIteraryDay(BaseModel):
 
 class LLMIteraryResponse(BaseModel):
     itinerary: List[LLMIteraryDay]
+
+class ItineraryWorkFlowStep(BaseModel):
+    name: str
+    id: str
+    images: str
+
+class ItineraryDay(BaseModel):
+    day: int
+    work_flow: List[ItineraryWorkFlowStep]
+
+class ItineraryWorkFlowStep(BaseModel):
+    name: str
+    id: str
+    images: str
+
+class ItineraryDay(BaseModel):
+    day: int
+    work_flow: List[ItineraryWorkFlowStep]
+
+class UserUploadItineraryRequest(BaseModel):
+    itinerary: List[ItineraryDay]
+
+class UpdatedItineraryWorkFlowStep(BaseModel):
+    name: str
+    transport: str
+    time_spent: str
+    id: str
+    images: str
+
+class UpdatedItineraryDay(BaseModel):
+    day: int
+    work_flow: List[UpdatedItineraryWorkFlowStep]
+
+class UserUploadItineraryResponse(BaseModel):
+    itinerary: List[UpdatedItineraryDay]

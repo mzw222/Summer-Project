@@ -11,7 +11,7 @@ import json
 from .crud_db import list_attractions_db, get_attraction_db
 from .crud import get_posts_for
 from .ai_services import generate_llm_itinerary
-from .models import RecommendRequest, ItineraryRequest, Attraction, Attraction_with_tags
+from .models import RecommendRequest, ItineraryRequest, Attraction, Attraction_with_tags,UserUploadItineraryRequest, UserUploadItineraryResponse,LLMIteraryRequest
 from .db import SessionLocal
 
 def recommend(req: RecommendRequest) -> List[Attraction_with_tags]:
@@ -129,3 +129,37 @@ def build_itinerary(req: ItineraryRequest) -> List[dict]:
             itinerary_list.append(day_dict)
         return itinerary_list
     return []
+
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+def generate_updated_itinerary(req: UserUploadItineraryRequest):
+    try:
+        # 验证输入
+        if not isinstance(req, UserUploadItineraryRequest):
+            logging.error("Invalid input: req must be an instance of UserUploadItineraryRequest")
+            return None
+        
+        # 构建请求文本
+        request_text = json.dumps(req.dict())
+        logging.debug(f"Sending request to agent: {request_text}")
+        
+        # 创建会话
+        conversation_id = builder.create_conversation()
+        logging.debug(f"Created conversation with ID: {conversation_id}")
+        
+        # 运行对话
+        out = builder.run(conversation_id, request_text)
+        answer = out.content.answer
+        logging.debug(f"Received answer from agent: {answer}")
+        
+        # 解析智能体返回的结果
+        try:
+            updated_itinerary = json.loads(answer)
+            return UserUploadItineraryResponse(**updated_itinerary)
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse agent's answer as JSON: {e}")
+            return None
+    
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        return None
