@@ -133,7 +133,16 @@ def generate_llm_itinerary(req: LLMIteraryRequest):
     if json_content:
         fixed_json = fix_json_format(json_content)
         try:
-            itinerary = json.loads(fixed_json)
+            itinerary_data = json.loads(fixed_json)
+            # 确保 itinerary_data 是一个列表
+            if isinstance(itinerary_data, dict) and 'itinerary' in itinerary_data:
+                itinerary = itinerary_data['itinerary']
+            elif isinstance(itinerary_data, list):
+                itinerary = itinerary_data
+            else:
+                logging.error("Invalid itinerary data format")
+                return None
+
             # 处理字段名和 time_spent 字段
             for day in itinerary:
                 if 'work_flow' in day:

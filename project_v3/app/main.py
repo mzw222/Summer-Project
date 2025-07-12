@@ -127,6 +127,8 @@ def health_check():
 def api_llm_itineraries(req: LLMIteraryRequest):
     return generate_llm_itinerary(req)
 
+
+
 # ---- 用户注册 & 查询 ----
 @app.post(
     "/users",
