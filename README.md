@@ -30,8 +30,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | POST | `/users`                                   | `{ "username": "xxx", "password": "yyy" }`<br>（JSON Body）                            | 用户注册             | `User`                             |                  |
 | POST | `/login`                                   | `{ "username": "xxx", "password": "yyy" }`<br>（JSON Body）                            | 用户登录             | `User`                             |                  |
 | GET  | `/users/{user_id}`                         | `user_id`（Path）                                                                     | 获取用户资料           | `User`                             |                  |
-| PUT  | `/users/me/bio`                           | `{ "bio": "新的个人简介
-" }`<br>（JSON Body）                                              | 更新当前用户的个人简介     | `User`                             |                  |
+| PUT  | `/users/me/bio`                           | `{ "bio": "新的个人简介" }`<br>（JSON Body）                                              | 更新当前用户的个人简介     | `User`                             |                  |
 | POST | `/posts`                                   | `{ user_id:"uid", content:"文字", images:["url1","url2"] }`<br>（JSON Body）            | 创建一条用户帖子         | `Post`                             |                  |
 | GET  | `/posts`                                   | —                                                                                   | 拉取所有用户帖子列表       | `List<Post>`                       |                  |
 | POST | `/posts/{post_id}/comments`                | `{ user_id:"uid", content:"评论内容" }`<br>（JSON Body），`post_id`（Path）                  | 在某贴下添加评论         | `Comment`                          |                  |
