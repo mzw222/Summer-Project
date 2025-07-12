@@ -5,10 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 from typing import List, Optional
 from sqlalchemy.orm import Session
-
+from .search_id import search_id_api
 # 导入数据库引擎与依赖
 from .db import get_db, Base, engine
 from .search_attractions import search_attractions_api
+# 导入 ORM 模型
+from .models_orm import UserORM
+# 其余代码保持不变
 # 导入 Pydantic 模型
 from .models import (
     Attraction,
@@ -24,6 +27,8 @@ from .models import (
     ItineraryDetail,
     LLMIteraryRequest,
     LLMIteraryResponse,
+    UserUploadItineraryResponse,
+    UserUploadItineraryRequest,
 )
 
 # 业务逻辑
@@ -85,13 +90,30 @@ def api_recommend(
     req = RecommendRequest(destination=destination or "", days=days, preferences=preferences)
     return recommend(req)
 
+# ===== 添加景点搜索接口 =====
 @app.get(
-    "/attractions/{id}",
-    response_model=Attraction,
-    summary="查询景点详情（含优缺点）"
+    "/search_id",
+    summary="查询景点详情",
+    response_model=List[dict]  # 由于返回的是动态结构，使用dict类型
 )
-def api_detail(id: str):
-    return detail(id)
+def api_search_id(
+    query: str = Query(..., description="搜索id"),
+
+):
+ 
+    # 打印日志以便调试
+    print(f"搜索景点: query={query}")
+    
+    try:
+        return search_id_api(query)
+    except HTTPException as he:
+        # 重新抛出HTTP异常
+        raise he
+    except Exception as e:
+        # 捕获未处理的异常
+        error_detail = f"内部服务器错误: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_detail)
+# ===== 景点搜索接口结束 =====
 
 @app.post(
     "/itinerary",
@@ -125,6 +147,29 @@ def api_signup(
     db: Session = Depends(get_db)
 ):
     return create_user_db(db, username, nickname)
+
+@app.post(
+    "/login",
+    response_model=User,
+    summary="用户登录"
+)
+def api_login(
+    username: str = Body(...),
+    password: str = Body(...),
+    db: Session = Depends(get_db)
+):
+    # 查找用戶
+    user = db.query(UserORM).filter(UserORM.username == username).first()
+    if not user or user.password != password:
+        raise HTTPException(status_code=401, detail="用户名或密码错误")
+    
+    return User(
+        id=user.id,
+        username=user.username,
+        password=user.password,
+        avatar=user.avatar,
+        bio=user.bio
+    )
 
 @app.get(
     "/users/{user_id}",
@@ -304,6 +349,18 @@ def api_delete_item(
 ):
     return delete_itinerary_item(db, item_id)
 '''
+
+@app.post(
+    "/upload-itinerary",
+    response_model=UserUploadItineraryResponse,
+    summary="上传行程数据并获取更新后的行程"
+)
+def api_upload_itinerary(req: UserUploadItineraryRequest):
+    updated_itinerary = generate_updated_itinerary(req)
+    if updated_itinerary:
+        return updated_itinerary
+    else:
+        raise HTTPException(status_code=500, detail="Failed to generate updated itinerary")
 
 # 新增用户-行程关联接口
 @app.post(
