@@ -29,6 +29,7 @@ from .models import (
     LLMIteraryResponse,
     UserUploadItineraryResponse,
     UserUploadItineraryRequest,
+    Attraction_with_tags
 )
 
 # 业务逻辑
@@ -77,11 +78,12 @@ app.add_middleware(
 )
 
 # ---- 景点推荐 / 行程 ----
-@app.get(
-    "/attractions",
-    response_model=List[Attraction],
-    summary="查询候选景点"
-)
+# Dependency
+@app.post("/attractions", response_model=List[Attraction_with_tags], summary="生成兴趣景点")
+def read_attractions_post(req: RecommendRequest, db: Session = Depends(get_db)):
+    return recommend(req)
+
+
 def api_recommend(
     destination: Optional[str] = Query(None, description="目的地关键词"),
     days: int = Query(1, gt=0, description="行程天数"),
