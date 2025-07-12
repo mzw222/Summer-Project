@@ -74,6 +74,9 @@ class User(BaseModel):
     avatar: Optional[str] = None
     bio: Optional[str]    = ""
 
+class UserUpdateRequest(BaseModel):
+    bio: str
+
 class Usertoitinerary(BaseModel):
     itineraries_id: str
     user_id: str
@@ -187,14 +190,6 @@ class LLMIteraryDay(BaseModel):
 class LLMIteraryResponse(BaseModel):
     itinerary: List[LLMIteraryDay]
 
-class ItineraryWorkFlowStep(BaseModel):
-    name: str
-    id: str
-    images: str
-
-class ItineraryDay(BaseModel):
-    day: int
-    work_flow: List[ItineraryWorkFlowStep]
 
 class ItineraryWorkFlowStep(BaseModel):
     name: str
