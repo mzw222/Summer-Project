@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 # 导入数据库引擎与依赖
 from .db import get_db, Base, engine
-
+from .search_attractions import search_attractions_api
 # 导入 Pydantic 模型
 from .models import (
     Attraction,
@@ -402,7 +402,7 @@ def api_delete_itinerary_detail(
     return delete_itinerarydetail_by_detail_id(db, detail_id)
 
 # 在现有导入后面添加
-from .search_posts_service import search_posts_api
+from .search_posts import search_posts_api
 # 在文件顶部的导入部分添加
 from typing import Dict, Any, List  # 确保导入这些类型
 # ===== 添加搜索帖子功能接口 =====

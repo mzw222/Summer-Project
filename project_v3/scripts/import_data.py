@@ -55,21 +55,55 @@ def import_attractions(csv_path: str):
 
 
 def import_xhs_posts(xlsx_path: str):
-    df = pd.read_excel(xlsx_path).fillna("")
+    df = pd.read_excel(xlsx_path)
     db = SessionLocal()
     for _, row in df.iterrows():
-        pid = str(uuid.uuid4())
         orm = PostORM(
-            id=pid,
-            user_id=row.get("用户ID", ""),
-            content=row.get("内容", ""),
-            images=json.dumps(row.get("图片URLs", "").split(","), ensure_ascii=False),
-            created_at=datetime.datetime.utcnow()
-        )
-        db.add(orm)
+                id=row.get("id"),
+                title=row.get("标题", ''),
+                text=row.get("文本内容", ''),
+                great=int(row.get("点赞数", 0)),
+                comments_num=int(row.get("评论数", 0)),
+                post_url=row.get("链接", ''),
+                tag_1=row.get("标签1", ''),
+                tag_2=row.get("标签2", ''),
+                tag_3=row.get("标签3", ''),
+                tag_4=row.get("标签4", ''),
+                tag_5=row.get("标签5", ''),
+                tag_6=row.get("标签6", ''),
+                tag_7=row.get("标签7", ''),
+                tag_8=row.get("标签8", ''),
+                tag_9=row.get("标签9", ''),
+                tag_10=row.get("标签10", ''),
+                comment_1=row.get("评论1", ''),
+                comment_2=row.get("评论2", ''),
+                comment_3=row.get("评论3", ''),
+                comment_4=row.get("评论4", ''),
+                comment_5=row.get("评论5", ''),
+                comment_6=row.get("评论6", ''),
+                comment_7=row.get("评论7", ''),
+                comment_8=row.get("评论8", ''),
+                comment_9=row.get("评论9", ''),
+                comment_10=row.get("评论10", ''),
+                comment_11=row.get("评论11", ''),
+                comment_12=row.get("评论12", ''),
+                comment_13=row.get("评论13", ''),
+                comment_14=row.get("评论14", ''),
+                comment_15=row.get("评论15", ''),
+                comment_16=row.get("评论16", ''),
+                comment_17=row.get("评论17", ''),
+                comment_18=row.get("评论18", ''),
+                comment_19=row.get("评论19", ''),
+                comment_20=row.get("评论20", ''),
+                pic_url_1=row.get("链接1", ''),
+                pic_url_2=row.get("链接2", ''),
+                pic_url_3=row.get("链接3", '')
+            )
+        db.merge(orm)
     db.commit()
     db.close()
     print("✅ 小红书帖子导入完成。")
+
 
 
 def import_ctrip_comments(xlsx_path: str):
@@ -92,7 +126,7 @@ def import_ctrip_comments(xlsx_path: str):
 
 if __name__ == "__main__":
     base = os.path.abspath(os.path.join(current_dir, "..", "data"))
-    import_attractions(os.path.join(base, "D:/desktop/项目/code/Summer-Project-3/project_v3/data/北京景点数据.xlsx"))
-    import_xhs_posts(os.path.join(base, "xiaohongshu_posts.xlsx"))
+    import_attractions(os.path.join(base, "北京景点数据.xlsx"))
+    import_xhs_posts(os.path.join(base, "厦门posts.xlsx"))
     import_ctrip_comments(os.path.join(base, "ctrip_comments.xlsx"))
     print("✅ 数据导入完成。")

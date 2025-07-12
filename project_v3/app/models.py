@@ -89,14 +89,45 @@ class Itinerarydetail(BaseModel):
     image: str
 
 class Post(BaseModel):
-    """
-    社交平台上的用户帖子（UGC）
-    """
     id: str
-    user_id: str
-    content: str
-    images: List[str] = []  # 可为空
-    created_at: str         # ISO 时间字符串
+    title: str
+    text: str
+    great: int
+    comments_num: int
+    post_url: str
+    tag_1: str
+    tag_2: str
+    tag_3: str
+    tag_4: str
+    tag_5: str
+    tag_6: str
+    tag_7: str
+    tag_8: str
+    tag_9: str
+    tag_10: str
+    comment_1: str
+    comment_2: str
+    comment_3: str
+    comment_4: str
+    comment_5: str
+    comment_6: str
+    comment_7: str
+    comment_8: str
+    comment_9: str
+    comment_10: str
+    comment_11: str
+    comment_12: str
+    comment_13: str
+    comment_14: str
+    comment_15: str
+    comment_16: str
+    comment_17: str
+    comment_18: str
+    comment_19: str
+    comment_20: str
+    pic_url_1: str
+    pic_url_2: str
+    pic_url_3: str
 
 class Comment(BaseModel):
     id: str

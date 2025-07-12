@@ -35,7 +35,7 @@ def search_db(query, city=None, fields=None):
                   'tag_4', 'tag_5', 'tag_6', 'tag_7', 'tag_8', 'tag_9', 'tag_10']
 
     # 连接数据库 - 确保数据库文件路径正确
-    conn = sqlite3.connect("dev(1).db")
+    conn = sqlite3.connect("scripts/dev.db")
     cursor = conn.cursor()
 
     # 查询表中所有字段
@@ -47,7 +47,7 @@ def search_db(query, city=None, fields=None):
         'comment_6', 'comment_7', 'comment_8', 'comment_9', 'comment_10',
         'comment_11', 'comment_12', 'comment_13', 'comment_14', 'comment_15',
         'comment_16', 'comment_17', 'comment_18', 'comment_19', 'comment_20',
-        'pic_url_1', 'pic_url_2', 'pic_url_3', 'city'
+        'pic_url_1', 'pic_url_2', 'pic_url_3'
     ]
 
     try:
