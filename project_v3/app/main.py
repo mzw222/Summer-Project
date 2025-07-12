@@ -7,7 +7,8 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 # 导入数据库引擎与依赖
-from .db import get_db, Base, engine , SessionLocal
+from .db import get_db, Base, engine
+
 # 导入 Pydantic 模型
 from .models import (
     Attraction,
@@ -23,18 +24,11 @@ from .models import (
     ItineraryDetail,
     LLMIteraryRequest,
     LLMIteraryResponse,
-    Attraction_with_tags,
-    UserUploadItineraryResponse,
-    UserUploadItineraryRequest
 )
-
-# 导入 ORM 模型
-from .models_orm import UserORM
 
 # 业务逻辑
 from .services import recommend, build_itinerary #detail
-from .ai_services import generate_llm_itinerary,generate_updated_itinerary
-
+from .ai_services import generate_llm_itinerary
 
 # ORM CRUD
 from .crud_db import (
@@ -78,12 +72,11 @@ app.add_middleware(
 )
 
 # ---- 景点推荐 / 行程 ----
-# Dependency
-@app.post("/attractions", response_model=List[Attraction_with_tags], summary="生成兴趣景点")
-def read_attractions_post(req: RecommendRequest, db: Session = Depends(get_db)):
-    return recommend(req)
-
-
+@app.get(
+    "/attractions",
+    response_model=List[Attraction],
+    summary="查询候选景点"
+)
 def api_recommend(
     destination: Optional[str] = Query(None, description="目的地关键词"),
     days: int = Query(1, gt=0, description="行程天数"),
@@ -128,33 +121,10 @@ def api_llm_itineraries(req: LLMIteraryRequest):
 )
 def api_signup(
     username: str = Body(...),
-    password: str = Body(...),
+    nickname: str = Body(...),
     db: Session = Depends(get_db)
 ):
-    return create_user_db(db, username, password)
-
-@app.post(
-    "/login",
-    response_model=User,
-    summary="用户登录"
-)
-def api_login(
-    username: str = Body(...),
-    password: str = Body(...),
-    db: Session = Depends(get_db)
-):
-    # 查找用戶
-    user = db.query(UserORM).filter(UserORM.username == username).first()
-    if not user or user.password != password:
-        raise HTTPException(status_code=401, detail="用户名或密码错误")
-    
-    return User(
-        id=user.id,
-        username=user.username,
-        password=user.password,
-        avatar=user.avatar,
-        bio=user.bio
-    )
+    return create_user_db(db, username, nickname)
 
 @app.get(
     "/users/{user_id}",
@@ -334,17 +304,6 @@ def api_delete_item(
 ):
     return delete_itinerary_item(db, item_id)
 '''
-@app.post(
-    "/upload-itinerary",
-    response_model=UserUploadItineraryResponse,
-    summary="上传行程数据并获取更新后的行程"
-)
-def api_upload_itinerary(req: UserUploadItineraryRequest):
-    updated_itinerary = generate_updated_itinerary(req)
-    if updated_itinerary:
-        return updated_itinerary
-    else:
-        raise HTTPException(status_code=500, detail="Failed to generate updated itinerary")
 
 # 新增用户-行程关联接口
 @app.post(
@@ -397,6 +356,27 @@ def api_delete_user_itinerary(
 ):
     return delete_usertoitinerary_via_itineraries_id(db, itinerary_id)
 
+# 新增行程详情创建接口
+@app.post(
+    "/itineraries/{itinerary_id}/details",
+    response_model=Itinerarydetail,
+    summary="添加行程详细项"
+)
+def api_create_itinerary_detail(
+    itinerary_id: int,
+    detail_data: dict = Body(..., example={
+        "name": "故宫",
+        "transport": "地铁8号线",
+        "time_spent": "3h",
+        "image": "https://example.com/palace.jpg"
+    }),
+    db: Session = Depends(get_db)
+):
+    return insert_itinerarydetail(
+        db,
+        itinerary_id,
+        **detail_data
+    )
 
 # 新增行程详情列表查询
 @app.get(
@@ -410,3 +390,117 @@ def api_list_itinerary_details(
 ):
     return get_itinerarydetails_by_itinerary(db, itinerary_id)
 
+# 新增行程详情删除接口
+@app.delete(
+    "/itinerarydetails/{detail_id}",
+    summary="删除行程详细项"
+)
+def api_delete_itinerary_detail(
+    detail_id: int,
+    db: Session = Depends(get_db)
+):
+    return delete_itinerarydetail_by_detail_id(db, detail_id)
+
+# 在现有导入后面添加
+from .search_posts_service import search_posts_api
+# 在文件顶部的导入部分添加
+from typing import Dict, Any, List  # 确保导入这些类型
+# ===== 添加搜索帖子功能接口 =====
+@app.get(
+    "/search/posts",
+    summary="搜索帖子",
+    description="在帖子数据库中搜索包含关键词的帖子",
+    response_model=List[Dict[str, Any]]
+)
+def api_search_posts(
+    query: str = Query(..., description="搜索关键词，如'美食'、'旅游'等"),
+    city: str = Query(
+        None, 
+        description="城市筛选（注意：当前数据库可能不包含此字段）"
+    ),
+    fields: str = Query(
+        None, 
+        description="指定搜索字段，逗号分隔。可选字段包括: title, text, tag_1, tag_2 等"
+    )
+):
+    """
+    帖子搜索接口
+    
+    参数说明:
+    - query: 必需搜索关键词
+    - city: 可选城市筛选（注意：原始数据库表可能不包含city字段）
+    - fields: 可选指定搜索字段（逗号分隔）
+    
+    默认搜索字段：title, text, tag_1, tag_2, ... tag_10
+    
+    示例请求:
+    - /search/posts?query=鼓浪屿
+    - /search/posts?query=海滩&fields=title,tag_1
+    """
+    try:
+        # 打印日志以便调试
+        print(f"搜索帖子: query={query}, city={city}, fields={fields}")
+        
+        # 调用搜索服务
+        results = search_posts_api(query, city, fields)
+        
+        # 打印搜索到的结果数量
+        print(f"找到 {len(results)} 条帖子")
+        
+        return results
+    except HTTPException as he:
+        # 重新抛出HTTP异常
+        raise he
+    except Exception as e:
+        # 捕获未处理的异常
+        error_detail = f"帖子搜索失败: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_detail)
+# ===== 搜索功能结束 =====
+
+
+# ===== 添加景点搜索接口 =====
+@app.get(
+    "/search/attractions",
+    summary="搜索景点",
+    description="在景点数据库中搜索包含关键词的景点",
+    response_model=List[dict]  # 由于返回的是动态结构，使用dict类型
+)
+def api_search_attractions(
+    query: str = Query(..., description="搜索关键词，如'动物园'、'博物馆'等"),
+    city: str = Query(
+        None, 
+        description="城市筛选，如'北京'、'上海'等。不指定则搜索所有城市"
+    ),
+    fields: str = Query(
+        None, 
+        description="指定搜索字段，逗号分隔。可选字段包括: area_name, attraction_name, address, tags_ai 等"
+    )
+):
+    """
+    景点搜索接口
+    
+    参数说明:
+    - query: 必需搜索关键词
+    - city: 可选城市筛选
+    - fields: 可选指定搜索字段（逗号分隔）
+    
+    默认搜索字段：area_name, attraction_name
+    
+    示例请求:
+    - /search/attractions?query=动物园&city=北京
+    - /search/attractions?query=博物馆&fields=attraction_name,address
+    - /search/attractions?query=公园
+    """
+    # 打印日志以便调试
+    print(f"搜索景点: query={query}, city={city}, fields={fields}")
+    
+    try:
+        return search_attractions_api(query, city, fields)
+    except HTTPException as he:
+        # 重新抛出HTTP异常
+        raise he
+    except Exception as e:
+        # 捕获未处理的异常
+        error_detail = f"内部服务器错误: {str(e)}"
+        raise HTTPException(status_code=500, detail=error_detail)
+# ===== 景点搜索接口结束 =====
