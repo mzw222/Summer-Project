@@ -75,7 +75,9 @@ class User(BaseModel):
     bio: Optional[str]    = ""
 
 class UserUpdateRequest(BaseModel):
-    bio: str
+    username: Optional[str] = None
+    password: Optional[str] = None
+    bio: Optional[str] = None
 
 class Usertoitinerary(BaseModel):
     itineraries_id: str

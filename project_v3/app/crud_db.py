@@ -113,6 +113,33 @@ def update_user_bio_db(db: Session, user_id: str, new_bio: str) -> User:
     
     return User(**user.__dict__)
 
+def update_user_profile_db(db: Session, user_id: str, updates: dict) -> User:
+    user = db.get(UserORM, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用戶不存在")
+    
+    if updates.get("username"):
+        # 檢查新用戶名是否已存在
+        existing = db.query(UserORM).filter(
+            UserORM.username == updates["username"],
+            UserORM.id != user_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="用戶名已存在")
+        user.username = updates["username"]
+    
+    if updates.get("password"):
+        user.password = updates["password"]
+    
+    # 只有當 bio 存在且不為空字串時才更新
+    if "bio" in updates and updates["bio"]:
+        user.bio = updates["bio"]
+    
+    db.commit()
+    db.refresh(user)
+    
+    return User(**user.__dict__)
+
 # --------------------
 # 帖子 CRUD
 # --------------------

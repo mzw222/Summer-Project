@@ -22,12 +22,13 @@ async def get_current_user(
 ):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if not user_id:
+        user_id = payload.get("sub")
+        if not user_id or not isinstance(user_id, str):
             raise HTTPException(401)
+        
+        user = get_user_db(db, user_id)
+        if not user:
+            raise HTTPException(401)
+        return user
     except JWTError:
         raise HTTPException(401)
-    user = get_user_db(db, user_id)
-    if not user:
-        raise HTTPException(401)
-    return user

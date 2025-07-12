@@ -42,6 +42,7 @@ from .crud_db import (
     create_user_db,
     get_user_db,
     update_user_bio_db,
+    update_user_profile_db,
     create_post_db,
     list_posts_db,
     add_comment_db,
@@ -140,11 +141,11 @@ def api_llm_itineraries(req: LLMIteraryRequest):
     summary="注册新用户"
 )
 def api_signup(
-    username: str = Body(...),
-    nickname: str = Body(...),
+    username: str = Body(..., example="user123"),
+    password: str = Body(..., example="password123"),
     db: Session = Depends(get_db)
 ):
-    return create_user_db(db, username, nickname)
+    return create_user_db(db, username, password)
 
 @app.post(
     "/login",
@@ -184,16 +185,16 @@ def api_get_user(
     return user
 
 @app.put(
-    "/users/me/bio",
+    "/users/me/profile",
     response_model=User,
-    summary="更新当前用户的个人简介"
+    summary="更新當前用戶的個人資料"
 )
-async def update_current_user_bio(
-    bio_update: UserUpdateRequest,
+async def update_current_user_profile(
+    profile_update: UserUpdateRequest,
     current_user: UserORM = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return update_user_bio_db(db, str(current_user.id), bio_update.bio)
+    return update_user_profile_db(db, str(current_user.id), profile_update.dict(exclude_unset=True))
 
 # ---- 帖子 / 评论 / 点赞 ----
 @app.post(
