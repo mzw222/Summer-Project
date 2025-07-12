@@ -34,7 +34,6 @@ class AttractionORM(Base):  # 注意这里使用Base，而非BaseModel
     disadvantage_1 = Column(String, nullable=True)
     disadvantage_2 = Column(String, nullable=True)
     disadvantage_3 = Column(String, nullable=True)
-    comment_number = Column(Integer)  # 注意字段名与数据库一致
 
 class UserORM(Base):
     __tablename__ = "users"

@@ -42,8 +42,7 @@ def search_db(query, city=None, fields=None):
         'comment_score', 'star', 'pic_pre', 'price', 'free',
         'character', 'lat', 'lon', 'hot', 'address', 'tags_ai',
         'advantage_1', 'advantage_2', 'advantage_3',
-        'disadvantage_1', 'disadvantage_2', 'disadvantage_3',
-        'comment_number'
+        'disadvantage_1', 'disadvantage_2', 'disadvantage_3'
     ]
 
     try:

@@ -30,7 +30,6 @@ class Attraction(BaseModel):
     disadvantage_1: Optional[str]
     disadvantage_2: Optional[str]
     disadvantage_3: Optional[str]
-    comment_number: int
     
 class SourcePost(BaseModel):
     """

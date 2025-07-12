@@ -39,7 +39,6 @@ def search_id_in_db(db: Session, query: str, fuzzy: bool = False):
                 'disadvantage_1': attraction.disadvantage_1,
                 'disadvantage_2': attraction.disadvantage_2,
                 'disadvantage_3': attraction.disadvantage_3,
-                'comment_number': attraction.comment_number  # 注意字段名匹配
             }
             for attraction in results
         ]
