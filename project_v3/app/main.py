@@ -63,6 +63,28 @@ from .crud_db import (
     delete_itinerarydetail_by_detail_id
 )
 
+async def get_current_user(
+    user_id: str = Body(...),
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    获取当前用户信息的依赖函数
+    
+    Args:
+        user_id: 用户ID
+        db: 数据库会话
+        
+    Returns:
+        User: 当前用户信息
+        
+    Raises:
+        HTTPException: 当用户不存在时抛出404错误
+    """
+    user = get_user_db(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
 app = FastAPI(title="Local Travel Prototype")
 
 # 启动时自动创建所有表
@@ -191,20 +213,13 @@ def api_get_user(
 @app.put(
     "/users/me/bio",
     response_model=User,
-    summary="更新當前用戶的個人簡介"
+    summary="更新当前用户的个人简介"
 )
 async def update_current_user_bio(
     bio_update: UserUpdateRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    更新當前登入用戶的個人簡介
-    
-    - 需要用戶登入
-    - 只能更新自己的簡介
-    - bio 不能為空
-    """
     return update_user_bio_db(db, current_user.id, bio_update.bio)
 
 # ---- 帖子 / 评论 / 点赞 ----
