@@ -5,6 +5,7 @@ import json
 import datetime
 from typing import List
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from .models_orm import (
     AttractionORM,
@@ -100,6 +101,17 @@ def get_user_db(db: Session, user_id: str) -> User | None:
     if not orm:
         return None
     return User(**orm.__dict__)
+
+def update_user_bio_db(db: Session, user_id: str, new_bio: str) -> User:
+    user = db.get(UserORM, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用戶不存在")
+    
+    user.bio = new_bio
+    db.commit()
+    db.refresh(user)
+    
+    return User(**user.__dict__)
 
 # --------------------
 # 帖子 CRUD

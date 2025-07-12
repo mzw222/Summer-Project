@@ -18,6 +18,7 @@ from .models import (
     RecommendRequest,
     ItineraryRequest,
     User,
+    UserUpdateRequest,
     Usertoitinerary,
     Itinerarydetail,
     Post,
@@ -34,12 +35,13 @@ from .models import (
 
 # 业务逻辑
 from .services import recommend, build_itinerary #detail
-from .ai_services import generate_llm_itinerary
+from .ai_services import generate_llm_itinerary, generate_updated_itinerary
 
 # ORM CRUD
 from .crud_db import (
     create_user_db,
     get_user_db,
+    update_user_bio_db,
     create_post_db,
     list_posts_db,
     add_comment_db,
@@ -61,6 +63,8 @@ from .crud_db import (
     get_itinerarydetails_by_itinerary,
     delete_itinerarydetail_by_detail_id
 )
+
+from .auth_basic import get_current_user
 
 app = FastAPI(title="Local Travel Prototype")
 
@@ -154,15 +158,15 @@ def api_login(
 ):
     # 查找用戶
     user = db.query(UserORM).filter(UserORM.username == username).first()
-    if not user or user.password != password:
+    if user is None or str(user.password) != password:
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     
     return User(
-        id=user.id,
-        username=user.username,
-        password=user.password,
-        avatar=user.avatar,
-        bio=user.bio
+        id=str(user.id),
+        username=str(user.username),
+        password=str(user.password),
+        avatar=str(user.avatar) if user.avatar is not None else None,
+        bio=str(user.bio) if user.bio is not None else ""
     )
 
 @app.get(
@@ -178,6 +182,18 @@ def api_get_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@app.put(
+    "/users/me/bio",
+    response_model=User,
+    summary="更新当前用户的个人简介"
+)
+async def update_current_user_bio(
+    bio_update: UserUpdateRequest,
+    current_user: UserORM = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return update_user_bio_db(db, str(current_user.id), bio_update.bio)
 
 # ---- 帖子 / 评论 / 点赞 ----
 @app.post(
