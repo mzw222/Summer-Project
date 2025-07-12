@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from .db import get_db
 from .models_orm import UserORM
 
-security = HTTPBasic()
+security = HTTPBasic(realm="请输入您这次修改前的用户名和密码")
 
 def get_current_user(
     credentials: HTTPBasicCredentials = Depends(security),
@@ -14,7 +14,7 @@ def get_current_user(
     if user is None or str(user.password) != credentials.password:
         raise HTTPException(
             status_code=401,
-            detail="認證失敗",
+            detail="认证失败",
             headers={"WWW-Authenticate": "Basic"},
         )
     return user 
