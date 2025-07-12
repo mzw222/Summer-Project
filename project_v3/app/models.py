@@ -75,6 +75,9 @@ class User(BaseModel):
     avatar: Optional[str] = None
     bio: Optional[str]    = ""
 
+class UserUpdateRequest(BaseModel):
+    bio: str              # 新的个人简介
+
 class Usertoitinerary(BaseModel):
     itineraries_id: str
     user_id: str

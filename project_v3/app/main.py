@@ -18,6 +18,7 @@ from .models import (
     RecommendRequest,
     ItineraryRequest,
     User,
+    UserUpdateRequest,  # 新增導入
     Usertoitinerary,
     Itinerarydetail,
     Post,
@@ -39,6 +40,7 @@ from .ai_services import generate_llm_itinerary
 from .crud_db import (
     create_user_db,
     get_user_db,
+    update_user_bio_db,  # 新增導入
     create_post_db,
     list_posts_db,
     add_comment_db,
@@ -184,6 +186,26 @@ def api_get_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@app.put(
+    "/users/me/bio",
+    response_model=User,
+    summary="更新當前用戶的個人簡介"
+)
+async def update_current_user_bio(
+    bio_update: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    更新當前登入用戶的個人簡介
+    
+    - 需要用戶登入
+    - 只能更新自己的簡介
+    - bio 不能為空
+    """
+    return update_user_bio_db(db, current_user.id, bio_update.bio)
 
 # ---- 帖子 / 评论 / 点赞 ----
 @app.post(

@@ -101,6 +101,31 @@ def get_user_db(db: Session, user_id: str) -> User | None:
         return None
     return User(**orm.__dict__)
 
+
+def update_user_bio_db(db: Session, user_id: str, new_bio: str) -> User:
+    """更新用戶的個人簡介
+
+    Args:
+        db (Session): 數據庫會話
+        user_id (str): 用戶ID
+        new_bio (str): 新的個人簡介
+
+    Returns:
+        User: 更新後的用戶資料
+
+    Raises:
+        HTTPException: 當用戶不存在時拋出404錯誤
+    """
+    user = db.get(UserORM, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用戶不存在")
+    
+    user.bio = new_bio
+    db.commit()
+    db.refresh(user)
+    
+    return User(**user.__dict__)
+
 # --------------------
 # 帖子 CRUD
 # --------------------
