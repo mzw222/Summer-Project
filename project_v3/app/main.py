@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from .search_id import search_id_api
+from .search_id import search_id_in_db
 # 导入数据库引擎与依赖
 from .db import get_db, Base, engine
 from .search_attractions import search_attractions_api
@@ -90,30 +90,20 @@ def api_recommend(
     req = RecommendRequest(destination=destination or "", days=days, preferences=preferences)
     return recommend(req)
 
-# ===== 添加景点搜索接口 =====
-@app.get(
-    "/search_id",
-    summary="查询景点详情",
-    response_model=List[dict]  # 由于返回的是动态结构，使用dict类型
-)
+@app.get("/search_id", response_model=list[Attraction])  # 使用Pydantic模型
 def api_search_id(
     query: str = Query(..., description="搜索id"),
-
+    db: Session = Depends(get_db)
 ):
- 
-    # 打印日志以便调试
-    print(f"搜索景点: query={query}")
-    
     try:
-        return search_id_api(query)
+        results = search_id_in_db(db, query)
+        if not results:
+            raise HTTPException(status_code=404, detail="未找到匹配的景点")
+        return results
     except HTTPException as he:
-        # 重新抛出HTTP异常
         raise he
     except Exception as e:
-        # 捕获未处理的异常
-        error_detail = f"内部服务器错误: {str(e)}"
-        raise HTTPException(status_code=500, detail=error_detail)
-# ===== 景点搜索接口结束 =====
+        raise HTTPException(status_code=500, detail=f"内部服务器错误: {str(e)}")
 
 @app.post(
     "/itinerary",

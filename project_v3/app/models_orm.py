@@ -4,32 +4,37 @@ import datetime
 from sqlalchemy import Column, String, Float, Text, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from .db import Base
+from sqlalchemy import Column, String, Float, Integer
+from sqlalchemy.ext.declarative import declarative_base
 
-class AttractionORM(Base):
+Base = declarative_base()
+
+class AttractionORM(Base):  # 注意这里使用Base，而非BaseModel
     __tablename__ = "attractions"
-    id          = Column(String, primary_key=True, index=True)
-    city        = Column(String)
-    url         = Column(String)
-    area_name    = Column(String)
-    attraction_name= Column(String, index=True)
-    comment_score= Column(Float)
-    star        = Column(String)
-    pic_pre     = Column(String)
-    price       = Column(Float)
-    free        = Column(String)
-    character   = Column(String)
-    lat         = Column(Float)
-    lon         = Column(Float)
-    hot         = Column(Float)
-    address     = Column(String)
-    tags_ai     = Column(String)
-    advantage_1 = Column(Text)
-    advantage_2 = Column(Text)
-    advantage_3 = Column(Text)
-    disadvantage_1 = Column(Text)
-    disadvantage_2 = Column(Text)
-    disadvantage_3 = Column(Text)
-    comment_number = Column(Integer)
+    
+    id = Column(String, primary_key=True)
+    city = Column(String)
+    url = Column(String, nullable=True)
+    area_name = Column(String, nullable=True)
+    attraction_name = Column(String)
+    comment_score = Column(Float)
+    star = Column(String, nullable=True)
+    pic_pre = Column(String, nullable=True)
+    price = Column(Float)
+    free = Column(String, nullable=True)
+    character = Column(String, nullable=True)
+    lat = Column(Float)
+    lon = Column(Float)
+    hot = Column(Float)
+    address = Column(String, nullable=True)
+    tags_ai = Column(String, nullable=True)
+    advantage_1 = Column(String, nullable=True)
+    advantage_2 = Column(String, nullable=True)
+    advantage_3 = Column(String, nullable=True)
+    disadvantage_1 = Column(String, nullable=True)
+    disadvantage_2 = Column(String, nullable=True)
+    disadvantage_3 = Column(String, nullable=True)
+    comment_number = Column(Integer)  # 注意字段名与数据库一致
 
 class UserORM(Base):
     __tablename__ = "users"

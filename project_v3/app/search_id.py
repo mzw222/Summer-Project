@@ -1,52 +1,51 @@
 # app/search_id.py
-import sqlite3
-import json
-import os
+from sqlalchemy.orm import Session
 from fastapi import HTTPException
+from .models_orm import AttractionORM  # 导入SQLAlchemy模型
 
-def search_id_api(query: str, fuzzy: bool = False):
-    """仅通过id字段匹配数据"""
-    db_path = "scripts/dev.db"
-    if not os.path.exists(db_path):
-        raise FileNotFoundError(f"数据库文件不存在: {db_path}")
-
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    # 定义需要返回的字段（可根据需求调整）
-    columns = [
-      'id', 'city', 'url', 'area_name', 'attraction_name',
-        'comment_score', 'star', 'pic_pre', 'price', 'free',
-        'character', 'lat', 'lon', 'hot', 'address', 'tags_ai',
-        'advantage_1', 'advantage_2', 'advantage_3',
-        'disadvantage_1', 'disadvantage_2', 'disadvantage_3',
-        'comment_number'
-    ]
-
+def search_id_in_db(db: Session, query: str, fuzzy: bool = False):
     try:
         if fuzzy:
-            # 模糊匹配：id中包含query（忽略大小写）
-            cursor.execute(
-                f"SELECT {', '.join(columns)} FROM attractions WHERE LOWER(id) LIKE ?",
-                (f'%{query.lower()}%',)  # SQL模糊查询语法
-            )
+            # 模糊匹配
+            query_expr = AttractionORM.id.ilike(f'%{query}%')
         else:
-            # 精确匹配：id完全等于query
-            cursor.execute(
-                f"SELECT {', '.join(columns)} FROM attractions WHERE id = ?",
-                (query,)
-            )
+            # 精确匹配
+            query_expr = AttractionORM.id == query
+            
+        results = db.query(AttractionORM).filter(query_expr).all()
         
-        data = cursor.fetchall()
-        # 转换为字典列表
-        results = [dict(zip(columns, row)) for row in data]
-
-    except sqlite3.OperationalError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"数据库错误: 表或字段不存在 - {str(e)}"
-        )
-    finally:
-        conn.close()
-
-    return json.dumps(results, ensure_ascii=False)
+        # 将ORM对象转换为字典列表
+        return [
+            {
+                'id': attraction.id,
+                'city': attraction.city,
+                'url': attraction.url,
+                'area_name': attraction.area_name,
+                'attraction_name': attraction.attraction_name,
+                'comment_score': attraction.comment_score,
+                'star': attraction.star,
+                'pic_pre': attraction.pic_pre,
+                'price': attraction.price,
+                'free': attraction.free,
+                'character': attraction.character,
+                'lat': attraction.lat,
+                'lon': attraction.lon,
+                'hot': attraction.hot,
+                'address': attraction.address,
+                'tags_ai': attraction.tags_ai,
+                'advantage_1': attraction.advantage_1,
+                'advantage_2': attraction.advantage_2,
+                'advantage_3': attraction.advantage_3,
+                'disadvantage_1': attraction.disadvantage_1,
+                'disadvantage_2': attraction.disadvantage_2,
+                'disadvantage_3': attraction.disadvantage_3,
+                'comment_number': attraction.comment_number  # 注意字段名匹配
+            }
+            for attraction in results
+        ]
+        
+    except Exception as e:
+        import traceback
+        print(f"数据库查询错误: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"查询数据库时出错: {str(e)}")
