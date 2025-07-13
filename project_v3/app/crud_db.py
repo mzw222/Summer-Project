@@ -77,23 +77,27 @@ def get_attraction_db(db: Session, attraction_id: str) -> Attraction | None:
 # --------------------
 
 def create_user_db(db: Session, username: str, password: str) -> User:
-    new_user = UserORM(
+    # 檢查用戶名是否已存在
+    existing_user = db.query(UserORM).filter(UserORM.username == username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="用户名已存在"
+        )
+    
+    # 創建新用戶
+    user = UserORM(
         id=str(uuid.uuid4()),
         username=username,
         password=password,
         avatar=None,
         bio=""
     )
-    db.add(new_user)
+    db.add(user)
     db.commit()
-    db.refresh(new_user)
-    return User(
-        id=new_user.id,
-        username=new_user.username,
-        password=new_user.password,
-        avatar=new_user.avatar,
-        bio=new_user.bio
-    )
+    db.refresh(user)
+    
+    return User(**user.__dict__)
 
 
 def get_user_db(db: Session, user_id: str) -> User | None:

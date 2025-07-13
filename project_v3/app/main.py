@@ -187,7 +187,7 @@ def api_get_user(
 @app.put(
     "/users/me/profile",
     response_model=User,
-    summary="更新當前用戶的個人資料"
+    summary="更新当前用户的个人资料"
 )
 async def update_current_user_profile(
     profile_update: UserUpdateRequest,
